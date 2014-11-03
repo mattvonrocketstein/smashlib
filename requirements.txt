@@ -1,6 +1,5 @@
 unipath
 argparse
-IPython==0.10
 psutil
 demjson
 pyflakes

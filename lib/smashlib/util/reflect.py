@@ -783,7 +783,7 @@ def filenameToModuleName(fn):
         else:
             break
     return modName
-
+from_dotpath = namedAny
 
 
 __all__ = [
