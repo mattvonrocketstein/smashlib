@@ -15,6 +15,9 @@ from smashlib.v2 import Reporter
 def clean_project_name(name):
     return name.replace('-','_').replace('.', '_')
 
+class UnknownProject(Exception):
+    pass
+
 @magics_class
 class ProjectMagics(Magics, ):
     @line_magic
@@ -71,8 +74,8 @@ class ProjectManager(Reporter):
             setattr(ProjectManagerInterface, name, prop)
 
     def _require_project(self, name):
-        err = 'unknown project {0}'.format(name)
-        assert name in self.project_map, err
+        if name not in self.project_map:
+            raise UnknownProject(name)
 
     def jump(self, name):
         self._require_project(name)
@@ -81,6 +84,21 @@ class ProjectManager(Reporter):
             self.report("Not found: {0}".format(_dir))
         else:
             self.shell.magic('pushd {0}'.format(_dir))
+
+    def build_argparser(self):
+        parser = super(ProjectManager, self).build_argparser()
+        parser.add_argument('--project', default='')
+        return parser
+
+    def parse_argv(self):
+        args, unknown = super(ProjectManager,self).parse_argv()
+        if args.project:
+            try:
+                self.activate_project(args.project)
+            except UnknownProject:
+                msg = 'unknown project: {0}'.format(args.project)
+                self.publish('warning', msg)
+        return args, unknown
 
     def activate_project(self, name):
 

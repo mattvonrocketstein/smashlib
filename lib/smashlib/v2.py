@@ -44,6 +44,19 @@ class EventfulMix(object):
                 out[name] = getattr(self, name)
         return out
 
+    def build_argparser(self):
+        import argparse
+        parser = argparse.ArgumentParser()
+        return parser
+
+    def parse_argv(self):
+        import sys
+        parser = self.build_argparser()
+        args, unknown = parser.parse_known_args(sys.argv[1:])
+        if len(vars(args)):
+            self.report("parsed argv: "+str(args))
+        return args, unknown
+
     def init_eventful(self):
         # initialize all elists.
         elists = self._get_eventful_type(EventfulList)
@@ -58,6 +71,10 @@ class Base(Configurable, EventfulMix):
         self.report("initializing {0}".format(self))
         self.init_eventful()
         self.init()
+
+    def __str__(self):
+        return '<SmashExtension: {0}>'.format(self.__class__.__name__)
+    __repr__ = __str__
 
     @property
     def smash(self):

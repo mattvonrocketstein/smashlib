@@ -26,6 +26,6 @@ setup(
     packages     = find_packages('lib'),
     entry_points = \
     { 'console_scripts': \
-      ['smash_shell = smashlib.bin.smash_shell:entry', ]
+      ['smash = smashlib.bin.smash:entry', ]
       }
     )

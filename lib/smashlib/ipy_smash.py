@@ -23,9 +23,25 @@ class Smash(Reporter):
         for dotpath in self.require_extensisons:
             mod = from_dotpath(dotpath)
             ext_name = dotpath.split('.')[-1]
-            record[ext_name] = mod.load_ipython_extension(self.shell)
+            ext_obj = mod.load_ipython_extension(self.shell)
+            record[ext_name] = ext_obj
+            if ext_obj is None:
+                self.publish('warning','{0}.load_ipython_extension should return an object'.format(dotpath))
             #self.shell.magic('load_ext {0}'.format(extension))
         self.extensions = record
+        self.report("loaded extensions:", record.keys())
+
+    #def build_argparser(self):
+    #    parser = super(Smash,self).build_argparser()
+    #    parser.add_argument('--project', default='')
+    #    return parser
+
+    def parse_argv(self):
+        args, unknown = super(Smash,self).parse_argv()
+        ext_objs = self.extensions.values()
+        for obj in ext_objs:
+            if obj:
+                args,unknown = obj.parse_argv()
 
     @property
     def project_manager(self):
@@ -35,6 +51,7 @@ class Smash(Reporter):
         self.shell._smash = self
         self.init_bus()
         self.init_extensions()
+        self.parse_argv()
 
     def warning(self, bus, *args, **kwargs):
         msg, rest = args[0], args[1:]
