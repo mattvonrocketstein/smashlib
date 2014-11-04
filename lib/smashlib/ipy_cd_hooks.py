@@ -37,6 +37,7 @@ class ChangeDirHooks(Reporter):
                     this_dir = os.path.abspath(
                         os.path.expanduser(parameter_s))
                     self.smash.bus.publish(CHANNEL, this_dir, old=self.last_dir)
+                    os.environ['PWD'] = this_dir
                     self.last_dir = this_dir
 
             self.original_cd_magic = shell.magics_manager.magics['line']['cd']

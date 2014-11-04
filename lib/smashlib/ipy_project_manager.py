@@ -11,7 +11,7 @@ from IPython.utils.traitlets import Instance
 from IPython.core.magic import Magics, magics_class, line_magic
 from smashlib.util.venv import contains_venv, is_venv
 from smashlib.v2 import Reporter
-
+from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
 def clean_project_name(name):
     return name.replace('-','_').replace('.', '_')
 
@@ -134,7 +134,9 @@ class ProjectManager(Reporter):
 
         if not os.getcwd()==self.project_map[name]:
             self.jump(name)
-
+        # fixme: this should really just be
+        # called from a post-input hook
+        self.publish(C_UPDATE_PROMPT_REQUEST, self)
 class ProjectManagerInterface(object):
     pass
 pmi = ProjectManagerInterface()

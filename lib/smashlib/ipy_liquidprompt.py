@@ -35,15 +35,19 @@ class LiquidPrompt(Reporter):
         self.shell.prompt_manager.in_template = tmp
 
     def get_prompt(self):
-        cmd = unicode('bash '+lp_f)
-        env = dict(
+        cmd = unicode('bash '+lp_f).format(os.getcwd())
+        env = os.environ.copy()
+        env.update(PS1="",)
+        dict(
             TERM='xterm',
-            PS1="",
+            #LP_HOST='fakehost',
+            PWD = os.getcwd(),
             USER=os.environ['USER'],
             BASH_VERSION='4.3.11(1)-release',
             VIRTUAL_ENV=os.environ['VIRTUAL_ENV'],
             )
-        tmp = subprocess.Popen(cmd, shell=True, env=env, stdout=PIPE)
+        tmp = subprocess.Popen(cmd, shell=True,
+                               env=env, stdout=PIPE)
         o,e = tmp.communicate()
         return o.decode('utf-8')
 
