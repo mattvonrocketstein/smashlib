@@ -4,7 +4,7 @@ import types
 import os, sys, glob
 from unipath import FSPath
 
-from smashlib.python import opj, ope, expanduser
+from smashlib.python import opj, ope, expanduser, abspath
 from smashlib.util import truncate_fpath
 
 get_path   = lambda: os.environ['PATH']
@@ -23,9 +23,14 @@ def is_venv(dir):
 
 def contains_venv(_dir, report=None):
     """ ascertain whether _dir is, or if it contains, a venv.
+        returns the first matching path according to the heuritic:
 
-        returns the first matching path according to the heuritic
+          1) if the directoy is a venv, return it
+          2) if the directory has subdir(s) that are venvs, return the first
+          3) no venv found?  return None
     """
+    _dir = abspath(expanduser(_dir))
+    print _dir
     if is_venv(_dir):
         return _dir
     else:
@@ -40,6 +45,8 @@ def contains_venv(_dir, report=None):
                     return subdir
         if report is not None:
             assert callable(report)
-            msg = "\t  searched {0} subdirectories: found no python venv's"
+            msg = "contains_venv({0}):"
+            report(msg.format(_dir))
+            msg = "  searched {0} subdirectories: found no python venv's"
             msg = msg.format(count)
             report(msg)

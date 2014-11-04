@@ -1,3 +1,12 @@
+# Changes made for smashlib:
+#
+#   * hardcode "echo $PS1" (near bottom) cause we have to run without not srcing
+#
+#   * hardcode PS1="-" (near top) TODO: remove this by using subprocess env
+#
+#   * hardcode to disable virtualenv.  this information is only from the parent
+#     process and it can be misleading if smashlib.ipy_venv is being used.
+#
 ################################################################################
 # LIQUID PROMPT
 # An intelligent and non intrusive prompt for bash and zsh

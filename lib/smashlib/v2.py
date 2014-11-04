@@ -14,13 +14,13 @@ class EventfulMix(object):
         del_name = '_event_del_'+name
         kls_name = self.__class__.__name__
         def default_insert(new):
-            self.report('hooks add', new)
+            self.report('default add', new)
         def default_set(slice_or_index, val):
-            msg = 'set (override {0}.{1})'.format(
+            msg = 'default set (override {0}.{1})'.format(
                 kls_name,set_name)
             self.report(msg, slice_or_index, val)
         def default_del(old):
-            self.report('hooks del',old)
+            self.report('default del',old)
         insert_callback = getattr(self, insert_name, default_insert)
         set_callback = getattr(self, set_name, default_set)
         kargs = dict(
@@ -66,14 +66,20 @@ class Base(Configurable, EventfulMix):
         except AttributeError:
             raise Exception("load smash first")
 
+    @property
+    def publish(self):
+        return self.smash.bus.publish
+
     def init(self):
         self.report("base self.init should probably be overridden")
 
 
 class Reporter(Base):
     verbose = Bool(False, config=True)
-    def report(self, msg, *args):
-        if self.verbose:
+
+    def report(self, msg, *args, **kargs):
+        force = kargs.pop('force', False)
+        if self.verbose or force:
             print "{0}: {1} {2}".format(
                 TermColors.Blue + self.__class__.__name__,
                 TermColors.Red + msg,

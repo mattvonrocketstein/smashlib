@@ -1,6 +1,7 @@
-#!/usr/bin/env python
-"""
-IPython extension to fix pysh profile
+""" ipy_project_manager
+
+    Defines the project manager extension.  Features:
+
 """
 import os
 from IPython.config.configurable import SingletonConfigurable
@@ -8,7 +9,11 @@ from IPython.utils.traitlets import Int, Float, Unicode, Bool
 from IPython.utils.traitlets import EventfulDict, EventfulList
 from IPython.utils.traitlets import Instance
 from IPython.core.magic import Magics, magics_class, line_magic
-from .v2 import Reporter
+from smashlib.util.venv import contains_venv, is_venv
+from smashlib.v2 import Reporter
+
+def clean_project_name(name):
+    return name.replace('-','_').replace('.', '_')
 
 @magics_class
 class ProjectMagics(Magics, ):
@@ -45,12 +50,25 @@ class ProjectManager(Reporter):
             contents = os.listdir(unicode(val))
             bind_list = []
             for name in contents:
+                clean_name = clean_project_name(name)
                 path = os.path.join(val, name)
                 if name not in self.project_map:
                     bind_list.append(path)
-                    self.project_map[name.replace('-','_')] = path
+                    self.project_map[clean_name] = path
             self.report("discovered {0} projects under '{1}'".format(
                 len(bind_list), val))
+        self.update_pmi()
+
+    def _get_prop(self, name, path):
+        def fxn(himself):
+            self.activate_project(name)
+        out = property(fxn)
+        return out
+
+    def update_pmi(self):
+        for name, path in self.project_map.items():
+            prop = self._get_prop(name, path)
+            setattr(ProjectManagerInterface, name, prop)
 
     def _require_project(self, name):
         err = 'unknown project {0}'.format(name)
@@ -65,39 +83,56 @@ class ProjectManager(Reporter):
             self.shell.magic('pushd {0}'.format(_dir))
 
     def activate_project(self, name):
-        from smashlib.venv import is_venv, contains_venv
+
         def guess_activation_steps(dir):
-            default_venv = self.smash.project_manager.venv_map.get(name, None)
-            found_venv = default_venv or \
-                         is_venv(dir) or \
-                         contains_venv(dir, report=self.report)
+            found_venv = None
+            default_venv_dir = self.venv_map.get(name, None)
+            if default_venv_dir:
+                default_venv = contains_venv(default_venv_dir,
+                                             report=self.report)
+                if not default_venv:
+                    msg = ("ProjectManager.venv_map uses {0}, "
+                           "but no venv was found")
+                    msg = msg.format(default_venv_dir)
+                    self.publish('warning', msg)
+                else:
+                    found_venv = default_venv
+            else:
+                found_venv = contains_venv(dir, report=self.report)
+
             if found_venv:
-                self.shell.magic('venv_activate {0}'.format(dir))
+                self.shell.magic('venv_activate {0}'.format(found_venv))
                 return True
+            else:
+                msg = "no activation steps are understood for {0}".format(name)
+                self.report(msg)
+
         self._require_project(name)
         _dir = self.project_map[name]
         activation_steps = self.activation_map.get(
             name, [])
         if not activation_steps:
             activation_steps = guess_activation_steps(_dir)
-            if activation_steps:
-                self.report("guessed activation-steps: ", activation_steps)
-            else:
-                msg = "no activation steps are understood for {0}".format(name)
-                self.report(msg)
 
         if not os.getcwd()==self.project_map[name]:
             self.jump(name)
 
+class ProjectManagerInterface(object):
+    pass
+pmi = ProjectManagerInterface()
+
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""
     ip = get_ipython()
-    pm=ProjectManager(ip)
-    #ip.user_ns['proj'] = pm
+    ProjectManager.pmi = pmi
+    pm = ProjectManager(ip)
+    #pmi.pm = pm
+
+    ip.user_ns['proj'] = pmi
     ProjectMagics.pm = pm
     ip.register_magics(ProjectMagics)
     return pm
 
 def unload_ipython_extension(ip):
     """ called by %unload_ext magic"""
-    pass
+    print 'not implemented yet'

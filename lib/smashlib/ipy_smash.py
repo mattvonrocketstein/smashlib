@@ -1,4 +1,7 @@
 """ smashlib.ipy_smash
+
+    Defines the main smash extension, which itself loads and allows
+    communications between the other smash extensions.
 """
 import cyrusbus
 
@@ -34,8 +37,8 @@ class Smash(Reporter):
         self.init_extensions()
 
     def warning(self, bus, *args, **kwargs):
-        msg, rest = args[0],args[1:]
-        self.report("WARNING: "+msg, *rest)
+        msg, rest = args[0], args[1:]
+        self.report("WARNING: "+msg, *rest, force=True)
 
     def init_bus(self):
         bus = cyrusbus.Bus()

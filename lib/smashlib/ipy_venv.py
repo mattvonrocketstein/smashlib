@@ -1,11 +1,24 @@
-"""
+""" smashlib.ipy_venv
+
+    Defines the ipy_venv extensions, which (usually) allows dynamically
+    switching virtualenv's without leaving your shell.  Things are going
+    to get hairy if you're using multiple python distributions.
 """
 import os, sys, glob
-from smashlib.v2 import Reporter
-from smashlib.python import opj
-from smashlib.util import truncate_fpath
+
+from IPython.utils.traitlets import Bool
 from IPython.core.magic import Magics, magics_class, line_magic
-from smashlib.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
+
+from smashlib.v2 import Reporter
+from smashlib.python import opj, ope, abspath, expanduser
+from smashlib.util import truncate_fpath
+from smashlib.util.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
+
+# channel names for use with the smash bus
+C_POST_ACTIVATE = 'post_activate_venv'
+C_PRE_ACTIVATE = 'pre_activate_venv'
+C_POST_DEACTIVATE = 'post_deactivate_venv'
+C_PRE_DEACTIVATE = 'pre_deactivate'
 
 @magics_class
 class VirtualEnvMagics(Magics, ):
@@ -18,16 +31,12 @@ class VirtualEnvMagics(Magics, ):
     def report(self):
         return self.vext.report
 
-def current_project():
-    return 'cproject-niy'
 
-# channel names for use with the smash bus
-C_POST_ACTIVATE = 'post_activate_venv'
-C_PRE_ACTIVATE = 'pre_activate_venv'
-C_POST_DEACTIVATE = 'post_deactivate_venv'
-C_PRE_DEACTIVATE = 'pre_deactivate'
 
 class VirtualEnvSupport(Reporter):
+
+    #not honored yet
+    show_venv_in_prompt = Bool(False, config=True)
 
     def init(self):
         self.smash.bus.subscribe(
@@ -35,17 +44,18 @@ class VirtualEnvSupport(Reporter):
 
     def channel_post_activate(self, bus, venv_dir):
         self.report("!post-activate: "+venv_dir)
+        from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
+        self.publish(C_UPDATE_PROMPT_REQUEST, self)
 
     def deactivate(self):
-        self.smash.bus.publish(
-            C_PRE_DEACTIVATE,
-            name = current_project())
+        target=os.environ['VIRTUAL_ENV']
+        self.publish(C_PRE_DEACTIVATE, target)
         try:
             venv = get_venv()
         except KeyError:
             return False
         else:
-            if not os.path.exists(venv):
+            if not ope(venv):
                 err = 'refusing to deactivate (relocated?) venv'
                 raise RuntimeError(err)
 
@@ -84,14 +94,11 @@ class VirtualEnvSupport(Reporter):
 
             sys.path = new_path
             # TODO: clean sys.modules?
-            self.smash.bus.publish(
-                C_POST_DEACTIVATE,
-                #name=Project('__smash__').CURRENT_PROJECT)
-                name=current_project())
+            self.publish(C_POST_DEACTIVATE, target)
             return True
 
     def _activate_str(self, obj):
-        absfpath = os.path.abspath(os.path.expanduser(obj))
+        absfpath = abspath(expanduser(obj))
         self.smash.bus.publish(C_PRE_ACTIVATE, name=absfpath)
         if True:
             vbin = to_vbin(absfpath)
@@ -101,16 +108,17 @@ class VirtualEnvSupport(Reporter):
             # we call bullshit if they have a more than one dir;
             # it might be a chroot but i dont think it's a venv
             python_dir = glob.glob(opj(vlib, 'python*/'))
-            if not 0 < len(python_dir) < 2:
-                err = ('Not sure how to handle this; '
-                       'zero or 1+ dirs matching "python*"')
-                raise RuntimeError, err
+            if len(python_dir)==0:
+                raise RuntimeError('no python dir in {0}'.format(vlib))
+            if len(python_dir) > 1:
+                err = "multiple python dirs matching in {0}".format(vlib)
+                raise RuntimeError(err)
             python_dir = python_dir[0]
 
             # this bit enables switching between two venv's
             # that might be "no-global-site" vs "use-global-site"
             site_file = opj(python_dir, 'site.py')
-            assert os.path.exists(site_file)
+            assert ope(site_file)
             tmp = dict(__file__=site_file)
             execfile(site_file, tmp)
             tmp['main']()
@@ -121,10 +129,12 @@ class VirtualEnvSupport(Reporter):
             path = get_path().split(':')
             os.environ['PATH'] = ':'.join([vbin] + path)
             os.environ['VIRTUAL_ENV'] = absfpath
-            self.report('adding "%s" to PATH; rehashing aliases' % truncate_fpath(vbin))
+            msg = 'adding "%s" to PATH; rehashing aliases'
+            msg = msg % truncate_fpath(vbin)
+            self.report(msg)
             sandbox = dict(__file__ = opj(vbin, 'activate_this.py'))
             execfile(opj(vbin, 'activate_this.py'), sandbox)
-
+            self.report("sandbox:\n{0}".format(sandbox))
             # libraries like 'datetime' can fail on import if this isnt done,
             # i'm not sure why activate_this.py doesnt accomplish it.
             dynload = opj(python_dir, 'lib-dynload')
@@ -132,7 +142,7 @@ class VirtualEnvSupport(Reporter):
 
             # NB: this updates bins but kills other aliases!
             self.shell.magic('rehashx')
-            self.smash.bus.publish(C_POST_ACTIVATE, name=absfpath)
+            self.smash.bus.publish(C_POST_ACTIVATE, absfpath)
 
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""
@@ -144,3 +154,4 @@ def load_ipython_extension(ip):
 
 def unload_ipython_extension(ip):
     """undo magic here.."""
+    print 'not implemented yet'
