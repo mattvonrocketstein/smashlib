@@ -36,16 +36,8 @@ c.LiquidPrompt.verbose = True
 c.ProjectManager.verbose = True
 c.ChangeDirHooks.verbose = True
 c.VirtualEnvSupport.verbose = True
-
 c.LiquidPrompt.lp_ps1  = ""   # not honored yet
 c.LiquidPrompt.float   = True # inserts more space around prompt
-
-# TODO: SmashAliasManager, which respects project settings
-c.AliasManager.user_aliases.append(('ack', 'ack-grep'))
-c.AliasManager.user_aliases.append(('st', 'git status'))
-c.AliasManager.user_aliases.append(('gd', 'git diff --stat'))
-c.AliasManager.user_aliases.append(
-    ('irc','xchat -d ~/code/dotfiles/xchat_default&'))
 
 projects = c.ProjectManager
 projects.config_file = 'doomwagon.json' # not honored yet
