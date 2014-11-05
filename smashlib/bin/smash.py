@@ -5,6 +5,12 @@
 # business..
 import os, sys
 import shutil
+import IPython
+ipy_version = IPython.__version__
+require_version = '3.0'
+if not ipy_version.startswith(require_version):
+    err = "smash requires ipython {0}, but your version is {1}"
+    raise SystemExit(err.format(require_version, ipy_version))
 
 expanduser = os.path.expanduser
 main_profile_name = 'SmaSh'
@@ -16,12 +22,9 @@ canonical_user_prof = os.path.join(smashlib_dir, 'user_config.py')
 def main():
     from smashlib import embed
     from IPython.core.profiledir import ProfileDir
-    #profile_dir=os.path.join(smash_dir, main_profile_name)
-    #ProfileDir.create_profile_dir(profile_dir)
     if not os.path.exists(smash_dir):
         os.mkdir(smash_dir)
     ProfileDir.create_profile_dir_by_name(smash_dir, main_profile_name)
-    #ProfileDir.create_profile_dir_by_name(smash_dir, user_profile_name)
     profile_dir = os.path.join(smash_dir, 'profile_'+main_profile_name)
     config_file = os.path.join(profile_dir, 'ipython_config.py')
     shutil.copy(canonical_prof, config_file,)
@@ -34,13 +37,4 @@ def main():
 entry = main
 
 if __name__=='__main__':
-    try:
-        from IPython import Shell
-    except:
-        print ("\nFATAL: cannot run SmaSh.\n"
-               "  IPython lib is not available.  \n"
-               "    To reproduce this error, try running:\n"
-               "      /usr/bin/env python -c\"from IPython import Shell\"\n")
-        sys.exit(1)
-    else:
-        main()
+    main()

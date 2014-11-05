@@ -2,18 +2,22 @@
 
     Defines the main smash extension, which itself loads and
     allows communications between the other smash extensions.
+
+    TODO: dynamic loading of extensions (use EventfulList)
 """
 import cyrusbus
 
-from smashlib.v2 import Reporter
-from smashlib.util.reflect import from_dotpath, ObjectNotFound
-
 from IPython.utils.traitlets import EventfulList, List, Bool
 
+from smashlib.v2 import Reporter
+from smashlib.util.reflect import from_dotpath, ObjectNotFound
+from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL, C_WARNING
+from smashlib.util import receives_event
+
 class Smash(Reporter):
-    #extensions = EventfulList(default_value=[], config=True)
     extensions = List(default_value=[], config=True)
     verbose_events = Bool(False, config=True)
+
     def init_extensions(self):
         record = {}
         for dotpath in self.extensions:
@@ -29,12 +33,11 @@ class Smash(Reporter):
         self.loaded_extensions = record
         self.report("loaded extensions:", self.loaded_extensions.keys())
 
-    #def build_argparser(self):
-    #    parser = super(Smash,self).build_argparser()
-    #    parser.add_argument('--project', default='')
-    #    return parser
-
     def parse_argv(self):
+        """ parse arguments recognized by myself,
+            then let all the extensions take a stab
+            at it.
+        """
         args, unknown = super(Smash,self).parse_argv()
         ext_objs = self.loaded_extensions.values()
         for obj in ext_objs:
@@ -51,14 +54,34 @@ class Smash(Reporter):
         self.init_extensions()
         self.parse_argv()
 
+    def init_bus(self):
+        """ note: it is a special case that due to bootstrap ordering,
+            @receive_events is not possible for this class.  if you want
+            to register event callbacks you'll have to register everything
+            the simple way.
+        """
+        super(Smash,self).init_bus()
+        bus = cyrusbus.Bus()
+        bus.subscribe(C_WARNING, self.warning)
+        bus.subscribe(C_POST_RUN_INPUT, self.input_finished_hook)
+        self.bus = bus
+
+    def input_finished_hook(self, bus, raw_finished_input):
+        if not raw_finished_input.strip():
+            return
+
+        rehash_if = [
+            'python setup.py develop',
+            'python setup.py install',
+            'apt-get install']
+        for x in rehash_if:
+            if x in raw_finished_input:
+                self.report("detected possible $PATH changes (rehashing)")
+                self.shell.magic('rehashx')
+
     def warning(self, bus, *args, **kwargs):
         msg, rest = args[0], args[1:]
         self.report("WARNING: "+msg, *rest, force=True)
-
-    def init_bus(self):
-        bus = cyrusbus.Bus()
-        bus.subscribe('warning', self.warning)
-        self.bus = bus
 
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""

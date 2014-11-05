@@ -6,8 +6,6 @@
 # isntead
 #
 print '..loading system config', __file__
-import IPython
-assert IPython.__version__.startswith('3.0')
 c = get_config()
 
 # load toplevel extensions
