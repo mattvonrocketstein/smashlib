@@ -1,6 +1,6 @@
 *.pyc
 node/*
-*/*.egg-info/*
+*.egg-info/*
 \#*
 *#
 .#*

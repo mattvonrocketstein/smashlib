@@ -1,6 +1,7 @@
 """ smashlib.project_manager
 """
 import os
+
 from IPython.utils.traitlets import Unicode
 from IPython.utils.traitlets import EventfulDict, EventfulList
 from IPython.utils.traitlets import Instance
