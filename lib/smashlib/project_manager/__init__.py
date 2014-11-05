@@ -1,32 +1,39 @@
 """ smashlib.project_manager
 """
 import os
-from IPython.config.configurable import SingletonConfigurable
-from IPython.utils.traitlets import Int, Float, Unicode, Bool
+from IPython.utils.traitlets import Unicode
 from IPython.utils.traitlets import EventfulDict, EventfulList
 from IPython.utils.traitlets import Instance
 from IPython.core.magic import Magics, magics_class, line_magic
 
+from smashlib.ipy_cd_hooks import CD_EVENT
 from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
-from smashlib.util.venv import contains_venv, is_venv
-from smashlib.util import truncate_fpath
-from smashlib.v2 import Reporter
 
-from smashlib.project_manager.util import clean_project_name, UnknownProjectError
+from smashlib.v2 import Reporter
+from smashlib.util import receives_event
+from smashlib.util import truncate_fpath
+from smashlib.python import abspath, expanduser
+from smashlib.util.venv import contains_venv
+from smashlib.project_manager.util import (
+    clean_project_name, UnknownProjectError)
 
 @magics_class
 class ProjectMagics(Magics):
     @line_magic
     def activate(self, parameter_s=''):
-        parts = parameter_s.split()
         self.pm.activate_project(parameter_s)
+
+    @line_magic
+    def add_project(self, parameter_s=''):
+        name = parameter_s.split()[0]
+        path=parameter_s[len(name)+1:]
+        print 'would have added project_map[{0}]={1}'.format(name,path)
+        #self.pm.project_map[name]=path
+
     @line_magic
     def jump(self, parameter_s=''):
-        parts = parameter_s.split()
-        self.pm.jump(parameter_s)
+        self.pm.jump_project(parameter_s)
 
-from smashlib.ipy_cd_hooks import CD_EVENT
-from smashlib.util import receives_event
 class ProjectManager(Reporter):
     config_file    = Unicode(u'', config=True) # not used
     search_dirs    = EventfulList(default_value=[], config=True)
@@ -40,21 +47,53 @@ class ProjectManager(Reporter):
         if new_dir in self.project_map.values():
             self.report("this directory is a project.")
 
-    def _event_set_search_dirs(self, slice_or_index, val):
-        val = os.path.abspath(os.path.expanduser(val))
-        if not os.path.exists(val):
-            self.report("warning: new search_dir doesnt exist: {0}".format(val))
+    def init(self):
+        # at this point project_map has been created from
+        # configuration data, but it's callback mechanism
+        # which does validation has not be registered yet.
+        # bind it, then reinitialize project_map to fix
+        # up and then bind any data set so far
+        self.project_map.on_set(self._event_set_project_map)
+        for x in self.project_map.copy():
+            self.project_map[x]=self.project_map[x]
+
+    def _event_set_project_map(self, key, val):
+        """ final word in cleaning/verifying/binding
+            input that goes to project_map.  project_map
+            should have only pristine data. Therefore DO
+            NOT abstract the helper method "_bind_project".
+        """
+        def _bind_project(name, path):
+            """ NOTE: be aware this is also used for re-binding """
+            if not os.path.exists(path):
+                self.report("bound project {0} to nonexistent {1}".format(
+                    name, path))
+            self.update_pmi()
+        name = key
+        clean_name = clean_project_name(name)
+        clean_path = abspath(expanduser(val))
+        dict.__setitem__(
+            self.project_map,
+            clean_name,
+            clean_path)
+        _bind_project(clean_name, clean_path)
+
+
+    def _event_set_search_dirs(self, slice_or_index, base_dir):
+        base_dir = os.path.abspath(os.path.expanduser(base_dir))
+        if not os.path.exists(base_dir):
+            msg = "warning: new search_dir doesnt exist: {0}"
+            msg = msg.format(base_dir)
+            self.report(msg)
         else:
-            contents = os.listdir(unicode(val))
+            contents = os.listdir(unicode(base_dir))
             bind_list = []
             for name in contents:
-                clean_name = clean_project_name(name)
-                path = os.path.join(val, name)
-                if name not in self.project_map:
-                    bind_list.append(path)
-                    self.project_map[clean_name] = path
+                path = os.path.join(base_dir, name)
+                #raise Exception,path
+                self.project_map[name] = path
             self.report("discovered {0} projects under '{1}'".format(
-                len(bind_list), val))
+                len(bind_list), base_dir))
         self.update_pmi()
 
     def _get_prop(self, name, path):
@@ -72,7 +111,7 @@ class ProjectManager(Reporter):
         if name not in self.project_map:
             raise UnknownProjectError(name)
 
-    def jump(self, name):
+    def jump_project(self, name):
         self._require_project(name)
         _dir = os.path.expanduser(self.project_map[name])
         if not os.path.exists(_dir):
@@ -130,11 +169,16 @@ class ProjectManager(Reporter):
             activation_steps = guess_activation_steps(_dir)
 
         if not os.getcwd()==self.project_map[name]:
-            self.jump(name)
+            self.jump_project(name)
         # fixme: this should really just be
         # called from a post-input hook
-        self.publish(C_UPDATE_PROMPT_REQUEST, self)
+        self.publish(C_UPDATE_PROMPT_REQUEST,
+                     self.__class__.__name__)
 
 class ProjectManagerInterface(object):
-    """ a blank object that project-manager will add properties to """
+    """ This object should be a singleton and will be assigned to
+        that main namespace as "proj".  In addition to the methods
+        you see below, The ProjectManager extension
+        will dynamically add/remove properties on to this
+    """
     pass
