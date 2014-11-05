@@ -13,3 +13,7 @@
 print '..loading SmaSh user-config from:', __file__
 
 c = get_config()
+
+# add custom directory hooks here
+c.ChangeDirHooks.change_dir_hooks.append(
+    "smashlib.ipy_cd_hooks.ChangeDirHooks.test_change_message")
