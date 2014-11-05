@@ -34,12 +34,16 @@ class receives_event(object):
     def __call__(self, fxn):
         def newf(himself, bus, *args, **kargs):
             if get_smash().verbose_events:
-                msg = 'event:{0}!{1}{2} handler:{3} data:{4}'.format(
+                zargs=args[0] if len(args)==1 else args
+                msg = '{0}!{1}{2} @{3} ={4}'.format(
                     TermColors.LightPurple,
                     self.channel,
                     TermColors.Normal,
                     fxn.__name__,
-                    args)[:80]
+                    zargs)
+                if msg[:77]!=msg:
+                    msg += '...'
+                    msg=msg[:77]
                 print msg
             return fxn(himself, *args, **kargs)
         newf._subscribe_to = self.channel
