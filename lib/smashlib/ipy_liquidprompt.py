@@ -1,4 +1,7 @@
 """ ipy_liquidprompt
+
+    Uses the liqiuidprompt project to render the ipyton prompt.
+    NOTE: liquidprompt itself requires bash or zsh
 """
 import os
 import subprocess
@@ -20,15 +23,19 @@ class LiquidPrompt(Reporter):
 
     @receives_event(CD_EVENT)
     def update_prompt_on_cd(self, new_dir, old_dir):
-        self.update_prompt()
+        pass #self.update_prompt()
 
     @receives_event(C_UPDATE_PROMPT_REQUEST)
-    def update_prompt_on_request(self, bus, request_from):
+    def update_prompt_on_request(self, request_from):
         "NOTE: really need to update prompt every time anything has run.."
-        self.update_prompt()
+        #self.update_prompt()
+        pass
 
     def init(self):
         self.update_prompt()
+        self.shell.set_hook(
+            'pre_prompt_hook',
+            lambda himself: self.update_prompt())
 
     def update_prompt(self):
         tmp = self.get_prompt().strip()
@@ -40,10 +47,10 @@ class LiquidPrompt(Reporter):
     def get_prompt(self):
         cmd = unicode('bash '+lp_f).format(os.getcwd())
         env = os.environ.copy()
-        env.update(PS1="",)
+        env.update(LP_HOSTNAME_ALWAYS="true",PS1="",)
         dict(
             TERM='xterm',
-            #LP_HOST='fakehost',
+            LP_HOST='fakehost',
             PWD = os.getcwd(),
             USER=os.environ['USER'],
             BASH_VERSION='4.3.11(1)-release',
