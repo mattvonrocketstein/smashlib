@@ -57,6 +57,7 @@ class EventfulMix(object):
             self.report("parsed argv: "+str(args))
         return args, unknown
 
+
     def init_eventful(self):
         # initialize all elists.
         elists = self._get_eventful_type(EventfulList)
@@ -70,6 +71,7 @@ class Base(Configurable, EventfulMix):
         self.shell.configurables.append(self)
         self.report("initializing {0}".format(self))
         self.init_eventful()
+        self.init_bus()
         self.init()
 
     def __str__(self):
@@ -90,6 +92,17 @@ class Base(Configurable, EventfulMix):
     def init(self):
         self.report("base self.init should probably be overridden")
 
+    def init_bus(self):
+        for x in dir(self):
+            # look through the class to avoid
+            # triggering properties on the instance
+            obj = getattr(self.__class__, x, None)
+            channel = getattr(obj, '_subscribe_to', None)
+            if channel:
+                #since we looked through the class earlier,
+                # we need to actually retrieve the method now
+                y = getattr(self, x)
+                self.smash.bus.subscribe(channel, y)
 
 class Reporter(Base):
     verbose = Bool(False, config=True)

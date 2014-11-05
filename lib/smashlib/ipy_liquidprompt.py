@@ -3,9 +3,12 @@
 import os
 import subprocess
 from subprocess import PIPE
-from smashlib.v2 import Reporter
-from smashlib.ipy_cd_hooks import CHANNEL as C_CD_EVENT
+
 from IPython.utils.traitlets import Bool
+
+from smashlib.v2 import Reporter
+from smashlib.ipy_cd_hooks import CD_EVENT
+from smashlib.util import receives_event
 
 lp_f = os.path.join(os.path.dirname(__file__), 'liquidprompt')
 C_UPDATE_PROMPT_REQUEST = 'udpate_prompt_request'
@@ -15,16 +18,16 @@ class LiquidPrompt(Reporter):
 
     float    = Bool(True, config=True, help="add more space between prompts")
 
+    @receives_event(CD_EVENT)
+    def update_prompt_on_cd(self, new_dir, old_dir):
+        self.update_prompt()
+
+    @receives_event(C_UPDATE_PROMPT_REQUEST)
+    def update_prompt_on_request(self, bus, request_from):
+        "NOTE: really need to update prompt every time anything has run.."
+        self.update_prompt()
+
     def init(self):
-        self.smash.bus.subscribe(C_CD_EVENT, self.cd_hook_event)
-        self.smash.bus.subscribe(C_UPDATE_PROMPT_REQUEST,
-                                 self.update_prompt_event)
-        self.update_prompt()
-
-    def cd_hook_event(self, bus, new_dir, *args, **kargs):
-        self.update_prompt()
-
-    def update_prompt_event(self, bus, request_from):
         self.update_prompt()
 
     def update_prompt(self):

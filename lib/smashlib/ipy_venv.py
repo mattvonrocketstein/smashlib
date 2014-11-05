@@ -10,8 +10,9 @@ from IPython.utils.traitlets import Bool
 from IPython.core.magic import Magics, magics_class, line_magic
 
 from smashlib.v2 import Reporter
-from smashlib.python import opj, ope, abspath, expanduser
+from smashlib.util import receives_event
 from smashlib.util import truncate_fpath
+from smashlib.python import opj, ope, abspath, expanduser
 from smashlib.util.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
 
 # channel names for use with the smash bus
@@ -21,11 +22,11 @@ C_POST_DEACTIVATE = 'post_deactivate_venv'
 C_PRE_DEACTIVATE = 'pre_deactivate'
 
 @magics_class
-class VirtualEnvMagics(Magics, ):
+class VirtualEnvMagics(Magics):
     @line_magic
     def venv_activate(self, parameter_s=''):
-        self.report("magic venv_activate", parameter_s)
-        self.vext._activate_str(parameter_s)
+        self.report("venv_activate: "+parameter_s)
+        self.vext.activate(parameter_s)
 
     @property
     def report(self):
@@ -38,17 +39,17 @@ class VirtualEnvSupport(Reporter):
     #not honored yet
     show_venv_in_prompt = Bool(False, config=True)
 
-    def init(self):
-        self.smash.bus.subscribe(
-            C_POST_ACTIVATE, self.channel_post_activate)
-
-    def channel_post_activate(self, bus, venv_dir):
-        self.report("!post-activate: "+venv_dir)
+    @receives_event(C_POST_ACTIVATE)
+    def request_prompt_update(self, venv_dir):
+        """ receives post-active events and, in case
+            the prompt includes venv information,
+            rebroadcasts a request to update prompt
+        """
         from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
         self.publish(C_UPDATE_PROMPT_REQUEST, self)
 
     def deactivate(self):
-        target=os.environ['VIRTUAL_ENV']
+        target = os.environ['VIRTUAL_ENV']
         self.publish(C_PRE_DEACTIVATE, target)
         try:
             venv = get_venv()
@@ -80,8 +81,9 @@ class VirtualEnvSupport(Reporter):
             for entry in sys.path:
                 if entry and not entry.startswith(venv):
                     new_path.append(entry)
-                else:
-                    self.warning("ignoring special-case?")
+                elif entry:
+                    self.report(" del: "+truncate_fpath(entry))
+                    #self.warning("ignoring special-case?")
                     #if entry.startswith(smashlib._meta['smash_home']) and \
                     #   'IPython' in entry:
                         # careful, dont remove our own bootstraps.
@@ -97,8 +99,9 @@ class VirtualEnvSupport(Reporter):
             self.publish(C_POST_DEACTIVATE, target)
             return True
 
-    def _activate_str(self, obj):
-        absfpath = abspath(expanduser(obj))
+    def activate(self, path):
+        self.deactivate()
+        absfpath = abspath(expanduser(path))
         self.smash.bus.publish(C_PRE_ACTIVATE, name=absfpath)
         if True:
             vbin = to_vbin(absfpath)
@@ -127,14 +130,12 @@ class VirtualEnvSupport(Reporter):
             # normally be done by 'source bin/activate', but is
             # not handled by activate_this.py
             path = get_path().split(':')
-            os.environ['PATH'] = ':'.join([vbin] + path)
             os.environ['VIRTUAL_ENV'] = absfpath
-            msg = 'adding "%s" to PATH; rehashing aliases'
-            msg = msg % truncate_fpath(vbin)
+            msg = '$PATH was adjusted; rehashing aliases'
             self.report(msg)
             sandbox = dict(__file__ = opj(vbin, 'activate_this.py'))
             execfile(opj(vbin, 'activate_this.py'), sandbox)
-            self.report("sandbox:\n{0}".format(sandbox))
+
             # libraries like 'datetime' can fail on import if this isnt done,
             # i'm not sure why activate_this.py doesnt accomplish it.
             dynload = opj(python_dir, 'lib-dynload')

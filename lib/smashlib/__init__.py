@@ -1,6 +1,6 @@
 """ SmaShlib
 """
 
-def embed():
+def embed(argv):
     from IPython import start_ipython
-    start_ipython(argv=["--profile=pm"])
+    start_ipython(argv=argv)

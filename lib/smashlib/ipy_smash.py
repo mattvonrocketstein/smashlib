@@ -1,35 +1,33 @@
 """ smashlib.ipy_smash
 
-    Defines the main smash extension, which itself loads and allows
-    communications between the other smash extensions.
+    Defines the main smash extension, which itself loads and
+    allows communications between the other smash extensions.
 """
 import cyrusbus
 
 from smashlib.v2 import Reporter
 from smashlib.util.reflect import from_dotpath, ObjectNotFound
 
-from IPython.utils.traitlets import EventfulList
+from IPython.utils.traitlets import EventfulList, List, Bool
 
 class Smash(Reporter):
-    require_extensisons = [
-        'smashlib.ipy_cd_hooks',
-        'smashlib.ipy_venv',
-        'smashlib.ipy_project_manager',
-        'smashlib.ipy_liquidprompt',
-        ]
-
+    #extensions = EventfulList(default_value=[], config=True)
+    extensions = List(default_value=[], config=True)
+    verbose_events = Bool(False, config=True)
     def init_extensions(self):
         record = {}
-        for dotpath in self.require_extensisons:
+        for dotpath in self.extensions:
             mod = from_dotpath(dotpath)
             ext_name = dotpath.split('.')[-1]
             ext_obj = mod.load_ipython_extension(self.shell)
             record[ext_name] = ext_obj
             if ext_obj is None:
-                self.publish('warning','{0}.load_ipython_extension should return an object'.format(dotpath))
+                msg = '{0}.load_ipython_extension should return an object'
+                msg = msg.format(dotpath)
+                self.publish('warning', msg)
             #self.shell.magic('load_ext {0}'.format(extension))
-        self.extensions = record
-        self.report("loaded extensions:", record.keys())
+        self.loaded_extensions = record
+        self.report("loaded extensions:", self.loaded_extensions.keys())
 
     #def build_argparser(self):
     #    parser = super(Smash,self).build_argparser()
@@ -38,14 +36,14 @@ class Smash(Reporter):
 
     def parse_argv(self):
         args, unknown = super(Smash,self).parse_argv()
-        ext_objs = self.extensions.values()
+        ext_objs = self.loaded_extensions.values()
         for obj in ext_objs:
             if obj:
                 args,unknown = obj.parse_argv()
 
     @property
     def project_manager(self):
-        return self.extensions['ipy_project_manager']
+        return self.loaded_extensions['ipy_project_manager']
 
     def init(self):
         self.shell._smash = self
@@ -62,20 +60,11 @@ class Smash(Reporter):
         bus.subscribe('warning', self.warning)
         self.bus = bus
 
-        """
-        bus.subscribe('post_invoke',     _verbose('post_invoke'))
-        bus.subscribe('pre_invoke',      _verbose('pre_invoke'))
-        bus.subscribe('pre_activate',    _verbose('pre_activate'))
-        bus.subscribe('post_activate',   _verbose('post_activate'))
-        bus.subscribe('pre_deactivate',  _verbose('pre_deactivate'))
-        bus.subscribe('post_deactivate', _verbose('post_deactivate'))
-        """
-
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""
     ip = get_ipython()
     ip._smash = Smash(ip)
-
+    return ip._smash
 
 def unload_ipython_extension(ip):
     del ip._smash

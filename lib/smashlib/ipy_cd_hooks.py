@@ -7,7 +7,7 @@ from smashlib.util.reflect import from_dotpath, ObjectNotFound
 
 from IPython.utils.traitlets import EventfulList
 
-CHANNEL = 'cd'
+CD_EVENT = 'cd'
 
 
 class ChangeDirHooks(Reporter):
@@ -36,7 +36,7 @@ class ChangeDirHooks(Reporter):
                 else:
                     this_dir = os.path.abspath(
                         os.path.expanduser(parameter_s))
-                    self.smash.bus.publish(CHANNEL, this_dir, old=self.last_dir)
+                    self.smash.bus.publish(CD_EVENT, this_dir, self.last_dir)
                     os.environ['PWD'] = this_dir
                     self.last_dir = this_dir
 
