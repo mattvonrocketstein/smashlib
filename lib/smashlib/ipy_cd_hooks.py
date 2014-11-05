@@ -1,4 +1,5 @@
-""" ipy_cd_hooks
+""" smashlib.ipy_cd_hooks
+
 """
 import os
 
@@ -17,7 +18,8 @@ class ChangeDirHooks(Reporter):
     original_cd_magic = None
 
     @staticmethod
-    def test_change_message(bus, new, old=None):
+    def test_change_message(bus, new, old):
+        """ used as a demo in user_config.py """
         print 'test_change_message got "cd" event:', dict(new=new, old=old)
 
     def init(self):
@@ -54,8 +56,8 @@ class ChangeDirHooks(Reporter):
             err = 'ChangeDirHooks.change_dir_hooks: '
             raise ObjectNotFound(err+e.message)
         self.report("retrieved from dotpath: ", obj)
-        self.report("object will be subscribed to <{0}>".format(CHANNEL))
-        self.smash.bus.subscribe(CHANNEL, obj)
+        self.report("object will be subscribed to <{0}>".format(CD_EVENT))
+        self.smash.bus.subscribe(CD_EVENT, obj)
 
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""

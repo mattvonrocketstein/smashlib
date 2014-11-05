@@ -1,4 +1,6 @@
 """ smashlib.venv
+
+    TODO: abstract this code to goulash and write tests
 """
 import types
 import os, sys, glob

@@ -1,4 +1,4 @@
-""" SmaShlib
+""" smashlib
 """
 
 def embed(argv):

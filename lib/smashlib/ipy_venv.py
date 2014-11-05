@@ -46,7 +46,7 @@ class VirtualEnvSupport(Reporter):
             rebroadcasts a request to update prompt
         """
         from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
-        self.publish(C_UPDATE_PROMPT_REQUEST, self)
+        self.publish(C_UPDATE_PROMPT_REQUEST, self.__class__.__name__)
 
     def deactivate(self):
         target = os.environ['VIRTUAL_ENV']
