@@ -1,26 +1,76 @@
+#!/usr/bin/env python
 """ pybcompgen
+
+    Pybcompgen calculates context sensitive tab-completion data which is
+    derived from environment bash system settings.  It doesn't need to know
+    anything about whether you use /etc/completion or /etc/bash_completion.d,
+    all that matters is whether *bash* knows about the completion.  The benefit
+    of doing this are obvious: you get access to all the completion features
+    that the system has installed without caring how the completion features
+    work.  Note that this approach doesn't just work for things in the users
+    $PATH, it works for arbitrary complex completion. In the default linux
+    installations, completion normally includes everything from
+    git-subcommands to debian packages, depending on context.
+
+    Example I/O:
+
+       $ pybcompgen "/et"
+       ["apt-get "]
+
+       $ pybcompgen "git lo"
+       ["log"]
+
+       $ pybcompgen "apt-ge"
+       ["apt-get "]
+
+       $ pybcompgen "apt-get inst"
+       ["install "]
+
+       $pybcompgen "apt-get install ubuntu-art"
+       ["ubuntu-artwork "]
 """
 import sys
-import subprocess
-from subprocess import Popen, PIPE
 import unicodedata
+from subprocess import Popen, PIPE
 
 def remove_control_characters(s):
     return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
 
 def complete(to_complete):
+    """ wow! so this is stupid, but what can you do? to understand
+        the command required to get completion information out of bash,
+        start by executing "printf '/et\x09\x09' | bash -i".  What this
+        command does is put bash into interactive mode, then simulate
+        typing "/et<tab><tab>" inside bash.  The tab-completion information
+        can scraped out of the text, but several things complicate the final
+        solution:
+
+        1) the tab-completion info apart from being post-processed
+           must be scraped from stderr, not from stdout.
+
+        2) for post-processing, without knowledge of how the prompt
+           will be rendered or if there is some kind of banner that
+           will be printed, it's hard to know where exactly to start
+           capturing tab-completion options.
+
+        3) the way used to get the tab completion involves the bash builtins
+           "printf", meaning we have to launch subprocess with "bash -c"
+
+        4) completion output could be paginated by bash if there are lots of
+           options.  have to account for that and still try to get all the
+           options instead of just the first page
+    """
     if not to_complete:
         return []
-    cmd='''bash -c "printf 'echo MARKER\n{complete}\t\t\x01#\necho MARKER'|bash -i"'''.format(complete=to_complete)
+    cmd = '''bash -c "printf 'echo MARKER\n{complete}\t\t\x01#\necho MARKER'|bash -i"'''.format(complete=to_complete)
     p1 = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
-    out,err = p1.communicate()
+    out, err = p1.communicate()
     lines = err.split('\n')
+
     first_marker = None
     last_marker = None
-
     for i in range(len(lines)):
         line = lines[i]
-
         if line.strip().endswith('echo MARKER'):
             if first_marker is None:
                 first_marker = i
