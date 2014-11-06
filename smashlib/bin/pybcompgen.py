@@ -9,6 +9,8 @@ def remove_control_characters(s):
     return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
 
 def complete(to_complete):
+    if not to_complete:
+        return []
     cmd='''bash -c "printf 'echo MARKER\n{complete}\t\t\x01#\necho MARKER'|bash -i"'''.format(complete=to_complete)
     p1 = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
     out,err = p1.communicate()
