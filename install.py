@@ -86,7 +86,7 @@ class InstallCommand(install):
                 os.path.join(DOT_SMASH, 'bin','python')))
 
     def clone_ipython(self, version):
-        url = 'git@github.com:ipython/ipython.git'
+        url = 'http://github.com/ipython/ipython.git'
         #or..  https://github.com/ipython/ipython/archive/master.zip
         self.report("cloning the official repo.  this might take a while")
         self.report("  url: "+url)
