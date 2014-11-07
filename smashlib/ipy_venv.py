@@ -49,7 +49,9 @@ class VirtualEnvSupport(Reporter):
         self.publish(C_UPDATE_PROMPT_REQUEST, self.__class__.__name__)
 
     def deactivate(self):
-        target = os.environ['VIRTUAL_ENV']
+        target = os.environ.get('VIRTUAL_ENV','')
+        if not target:
+            return
         self.publish(C_PRE_DEACTIVATE, target)
         try:
             venv = get_venv()

@@ -54,7 +54,7 @@ class LiquidPrompt(Reporter):
             PWD = os.getcwd(),
             USER=os.environ['USER'],
             BASH_VERSION='4.3.11(1)-release',
-            VIRTUAL_ENV=os.environ['VIRTUAL_ENV'],
+            VIRTUAL_ENV=os.environ.get('VIRTUAL_ENV',''),
             )
         tmp = subprocess.Popen(cmd, shell=True,
                                env=env, stdout=PIPE)
