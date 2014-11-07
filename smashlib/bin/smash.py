@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #
-# you would think that "env python" would work everywhere, but due
-# due to interaction with sourced venv's this is actually a tricky
-# business..
+
 import os, sys
 import shutil
 import IPython
+
 ipy_version = IPython.__version__
 require_version = '3.0'
+
 if not ipy_version.startswith(require_version):
     err = "smash requires ipython {0}, but your version is {1}"
     raise SystemExit(err.format(require_version, ipy_version))
