@@ -11,13 +11,15 @@ import cyrusbus
 from IPython.utils.traitlets import EventfulList, List, Bool
 
 from smashlib.v2 import Reporter
-from smashlib.util.reflect import from_dotpath, ObjectNotFound
 from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL, C_WARNING
+from smashlib.util.reflect import from_dotpath, ObjectNotFound
 from smashlib.util.events import receives_event
+from smashlib.util import bash
 
 class Smash(Reporter):
     extensions = List(default_value=[], config=True)
     verbose_events = Bool(False, config=True)
+    load_bash_aliases = Bool(False, config=True)
 
     def init_extensions(self):
         record = {}
@@ -54,9 +56,10 @@ class Smash(Reporter):
         self.init_bus()
         self.init_extensions()
         self.parse_argv()
-        from smashlib.util import bash
-        for alias, cmd in bash.get_aliases():
-            self.shell.magic("alias {0} {1}".format(alias,cmd))
+        if self.load_bash_aliases:
+            for alias, cmd in bash.get_aliases():
+                self.shell.magic("alias {0} {1}".format(alias,cmd))
+
         smash_bin = os.path.expanduser('~/.smash/bin')
         if smash_bin not in os.environ['PATH']:
             os.environ['PATH'] =smash_bin + ':' + os.environ['PATH']

@@ -90,7 +90,8 @@ class Base(Configurable, EventfulMix):
         return self.smash.bus.publish
 
     def init(self):
-        self.report("base self.init should probably be overridden")
+        #self.report("base self.init should probably be overridden")
+        pass
 
     def init_bus(self):
         for x in dir(self):

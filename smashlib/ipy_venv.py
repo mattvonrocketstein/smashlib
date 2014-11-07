@@ -39,15 +39,6 @@ class VirtualEnvSupport(Reporter):
     #not honored yet
     show_venv_in_prompt = Bool(False, config=True)
 
-    @receives_event(C_POST_ACTIVATE)
-    def request_prompt_update(self, venv_dir):
-        """ receives post-active events and, in case
-            the prompt includes venv information,
-            rebroadcasts a request to update prompt
-        """
-        from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
-        self.publish(C_UPDATE_PROMPT_REQUEST, self.__class__.__name__)
-
     def deactivate(self):
         target = os.environ.get('VIRTUAL_ENV','')
         if not target:

@@ -36,7 +36,6 @@ class ProjectMagics(Magics):
         self.pm.jump_project(parameter_s)
 
 class ProjectManager(Reporter):
-    config_file    = Unicode(u'', config=True) # not used
     search_dirs    = EventfulList(default_value=[], config=True)
     project_map    = EventfulDict(default_value={}, config=True)
     alias_map      = EventfulDict(default_value={}, config=True)
@@ -173,10 +172,6 @@ class ProjectManager(Reporter):
 
         if not os.getcwd()==self.project_map[name]:
             self.jump_project(name)
-        # fixme: this should really just be
-        # called from a post-input hook
-        self.publish(C_UPDATE_PROMPT_REQUEST,
-                     self.__class__.__name__)
 
 class ProjectManagerInterface(object):
     """ This object should be a singleton and will be assigned to

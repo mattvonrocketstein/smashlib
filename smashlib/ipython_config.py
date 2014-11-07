@@ -13,19 +13,6 @@ load_subconfig('ipython_config.py', profile='default')
 c.InteractiveShellApp.extensions.append("smashlib.pysh")
 c.InteractiveShellApp.extensions.append("smashlib.ipy_smash")
 
-# load optional smash extensions
-c.Smash.extensions.append('smashlib.ipy_liquidprompt')
-c.Smash.extensions.append('smashlib.ipy_cd_hooks')
-c.Smash.extensions.append('smashlib.ipy_venv')
-c.Smash.extensions.append('smashlib.ipy_project_manager')
-
-# include parts of profile_pysh/ipython_config.py
-c.InteractiveShell.separate_in = ''
-c.InteractiveShell.separate_out = ''
-c.InteractiveShell.separate_out2 = ''
-c.TerminalIPythonApp.display_banner = False
-c.TerminalInteractiveShell.confirm_exit = False
-
 # every smash component gets it's own verbosity setting.
 # this mostly controls the printing of debugging info
 c.Smash.verbose = True
@@ -34,40 +21,56 @@ c.LiquidPrompt.verbose = True
 c.ProjectManager.verbose = True
 c.ChangeDirHooks.verbose = True
 c.VirtualEnvSupport.verbose = True
-c.LiquidPrompt.lp_ps1  = ""   # not honored yet
-c.LiquidPrompt.float   = True # inserts more space around prompt
 
+# configure smash
+################################################################################
+
+c.Smash.load_bash_aliases = True
+
+# include various things that used to be
+# done in profile_pysh/ipython_config.py
+c.InteractiveShell.separate_in = ''
+c.InteractiveShell.separate_out = ''
+c.InteractiveShell.separate_out2 = ''
+c.TerminalIPythonApp.display_banner = False
+c.TerminalInteractiveShell.confirm_exit = False
+
+# If False, only the completion results from
+# the first non-empty completer will be returned.
+c.IPCompleter.merge_completions = False
+
+# load optional smash extensions
+c.Smash.extensions.append('smashlib.ipy_liquidprompt')
+c.Smash.extensions.append('smashlib.ipy_cd_hooks')
+c.Smash.extensions.append('smashlib.ipy_venv')
+c.Smash.extensions.append('smashlib.ipy_project_manager')
+
+
+## configure the liquidprompt extension
+################################################################################
+
+# insert more space around prompt
+c.LiquidPrompt.float   = True
+
+# configure the project manager extension
+################################################################################
 projects = c.ProjectManager
-projects.config_file = 'doomwagon.json' # not honored yet
 projects.search_dirs.append('~/code')
-projects.project_map.update(dict(toybox='/vagrant'))
-projects.venv_map.update(dict(robotninja='~/code/hammock/'))
-projects.venv_map.update(dict(toybox='/vagrant/guest_venv'))
-projects.venv_map.update(dict(smashlib='~/code/ipython'))
 
+# configure the ipython app
+################################################################################
 app = c.InteractiveShellApp
 app.exec_lines.append("""%rehashx""")
 app.exec_lines.append("""ip=get_ipython()""")
 app.exec_lines.append("""cfg=ip.config""")
 app.exec_lines.append("""smsh=ip._smash""")
 
-# If False, only the completion results from the first non-empty completer will
-# be returned.
-c.IPCompleter.merge_completions = False
 
+# load smash user config.  this must happen last
+################################################################################
 from smashlib.util import load_user_config
 load_user_config(globals())
 
-# this must happen last.  it's awkward like this because
-# i want config.py in ~/.smash, not in ~/.smash/profile_user/...
-"""import os
-from IPython.config.loader import PyFileConfigLoader
-if os.path.exists(user_config):
-    loader = PyFileConfigLoader(user_config_name,smashdir)
-    sub_config = loader.load_config()
-    c.merge(sub_config)
-# c.InteractiveShellApp.exec_files = []
-"""
 
 # Create a massive crash report when IPython encounters what may be an internal
 # error.  The default is to append a short message to the usual traceback

@@ -3,7 +3,9 @@
     Defines the project manager extension.  Features:
 
 """
-from smashlib.project_manager import ProjectMagics, ProjectManager, ProjectManagerInterface
+from smashlib.project_manager import (
+    ProjectMagics, ProjectManager, ProjectManagerInterface)
+
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""
     ip = get_ipython()
