@@ -59,6 +59,7 @@ class InstallCommand(install):
         return result
 
     def add_ipython(self):
+        self.report("smash requires dev version of ipython.  looking for it..")
         result = self.venv_ipython()
         have_ipy = result.succeeded
         good_IPY_VERSION = result.succeeded and (result.strip()==IPY_VERSION)
