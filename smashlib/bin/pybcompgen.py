@@ -45,20 +45,30 @@ def complete(to_complete):
         can scraped out of the text, but several things complicate the final
         solution:
 
-        1) the tab-completion info apart from being post-processed
-           must be scraped from stderr, not from stdout.
+        1) the tab-completion info, apart from being post-processed, must be
+           scraped from stderr, not from stdout.
 
-        2) for post-processing, without knowledge of how the prompt
-           will be rendered or if there is some kind of banner that
-           will be printed, it's hard to know where exactly to start
-           capturing tab-completion options.
+        2) for post-processing, without knowledge of how the prompt will be
+           rendered or if there is some kind of banner that will be printed,
+           it's hard to know where exactly to start capturing tab-completion
+           options.
 
-        3) the way used to get the tab completion involves the bash builtins
+        3) the method used to get the tab completion involves the bash builtins
            "printf", meaning we have to launch subprocess with "bash -c"
 
         4) completion output could be paginated by bash if there are lots of
            options.  have to account for that and still try to get all the
            options instead of just the first page
+
+        5) sending EOF does not working unless it comes after a newline.  this
+           means we have to take extra steps to avoid actually executing the
+           command we want to complete (executing the command is not what the
+           user expects and is possibly unsafe).  to avoid executing the line,
+           after getting tab completion you have to simulate control-a (go to
+           start of line) followed by '#'.  this comments the line and prevents
+           it from executing.  note: you cannot send control-c to cancel the
+           execution of the line because we are dealing with pipes, whereas
+           control-c is processed only by proper tty's.
     """
     if not to_complete:
         return []
