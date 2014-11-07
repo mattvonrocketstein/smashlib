@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-""" setup.py for smash
+""" setup.py for smashlib
 """
 
 from setuptools import setup, find_packages
 
 setup(
-    name         = 'smash',
+    name         = 'smashlib',
     author       = 'mattvonrocketstein',
     author_email = '$author@gmail',
     version      = '0.1',
     description  = 'SmaSh: a smart(er) shell',
-    url          = 'http://github.com/mattvonrocketstein/smash',
+    url          = 'http://github.com/mattvonrocketstein/smashlib',
     license      = 'MIT',
     keywords     = 'system shell',
     platforms    = 'any',
@@ -26,6 +26,6 @@ setup(
     packages     = ['smashlib'],#find_packages('.'),
     entry_points = \
     { 'console_scripts': \
-      ['smash = smashlib.bin.smash:entry', ]
-      }
-    )
+      ['run_smash = smashlib.bin.smash:entry', ]
+    }
+)
