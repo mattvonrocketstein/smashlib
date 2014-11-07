@@ -5,6 +5,7 @@
 
     TODO: dynamic loading of extensions (use EventfulList)
 """
+import os
 import cyrusbus
 
 from IPython.utils.traitlets import EventfulList, List, Bool
@@ -54,8 +55,11 @@ class Smash(Reporter):
         self.init_extensions()
         self.parse_argv()
         from smashlib.util import bash
-        for alias,cmd in bash.get_aliases():
+        for alias, cmd in bash.get_aliases():
             self.shell.magic("alias {0} {1}".format(alias,cmd))
+        smash_bin = os.path.expanduser('~/.smash/bin')
+        if smash_bin not in os.environ['PATH']:
+            os.environ['PATH'] =smash_bin + ':' + os.environ['PATH']
 
     def init_bus(self):
         """ note: it is a special case that due to bootstrap ordering,
@@ -72,7 +76,6 @@ class Smash(Reporter):
     def input_finished_hook(self, bus, raw_finished_input):
         if not raw_finished_input.strip():
             return
-
         rehash_if = [
             'python setup.py develop',
             'python setup.py install',
