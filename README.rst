@@ -1,13 +1,8 @@
-
 ===========
 About SmaSh
 ===========
 
-SmaSh is the smart-shell.  It offers features for project management, a flexible plugin
-architecture that is easy to use, and simple JSON configuration files that try to be as
-sane as possible.  Python developers might be particularly interested because it also
-happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It builds
-on, and offers very sophisticated support for python virtual environments.
+SmaSh is the smart-shell.  It offers features for project management, a flexible plugin architecture that is easy to use, and simple JSON configuration files that try to be as sane as possible.  Python developers might be particularly interested because it also happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It builds on, and offers very sophisticated support for python virtual environments.
 
 
 ===========
@@ -20,38 +15,25 @@ Shells are still annoying!::
   - Things like sed / awk are great for quick hacks, but are obscure and not maintainable.
   - Shells are not conveniently modular, and do not perform well for things like:
     - multiple projects,
-    - multiple use-cases,
+    - multiple use cases,
     - or domain specific languages.
   - Shells offer only minimal or awkward context-awareness
     - no triggers for things like pre/post "dir-change"
     - no hooks for pre/post processing of IO
 
-"Do what I mean" is a pretty reasonable expectation for a modern computer program..
-that's why we get what we expect when we type "1024*231" into google, namely a numerical
-result instead of just a bunch of matching webpages.
+Sometimes "do what I mean" is a pretty reasonable expectation for a modern computer program.. that's why we get what we expect when we type "1024*231" into google, namely a numerical result instead of just a bunch of matching webpages.
 
 Type */etc/* into your shell and what do you see?  Probably something like this:::
 
    bash:/etc/: Is a directory
 
-No kidding.  I even put a "/" at the end, so probably I know it is a directory and, in the
-absence of any other context, I probably want to move into that directory.  Or, if I were
-to type out the name of a non-executable file that ends in .txt, chances are good I want to
-EDIT THE FILE and not see some kind of error about how the file is not executable.
+No kidding.  I even put a "/" at the end, so probably I know it is a directory and, in the absence of any other context, I probably want to move into that directory.  Or, if I were to type out the name of a non-executable file that ends in .txt, chances are good I want to EDIT THE FILE and not see some kind of error about how the file is not executable.
 
-How would you even go about fixing something like this in bash, where the interface comes
-burdened with so many assumptions?
+How would you even go about fixing something like this in bash, where the interface comes burdened with so many assumptions?
 
-On top of those problems, shells are not at all ideal for software development.  And based
-on that point, maybe you're already thinking *"Use emacs/vim/eclipse!"*.  But, I also
-personally think that a huge, do-everything IDE is not the True Way.
+On top of those problems, shells are not at all ideal for software development.  And based on that point, maybe you're already thinking *"Use emacs/vim/eclipse!"*.  But, I also personally think that a huge, do-everything IDE is not the True Way.
 
-Still the problems most people solve on a daily basis are similar to the problems from
-yesterday, and shell experiences are often characterized by too much repetition.  We fumble with
-awkward histories with our control-r's and we do things like build one-off aliases or
-scripts and throw them in a *.bashrc* or *~/bin* and there they rot, usually because they
-weren't readable a week after they were written, and they weren't quite general enough
-to be used everywhere.  Enough is enough!
+Still the problems most people solve on a daily basis are similar to the problems from yesterday, and shell experiences are often characterized by too much repetition.  We fumble with awkward histories or with our control-r's and we do things like build one-off aliases or scripts and throw them in a *.bashrc* or *~/bin* and there they rot, usually because they weren't readable a week after they were written.  Enough is enough!
 
 ====================================
 IPython+pysh is not quite a solution
@@ -63,8 +45,8 @@ for python developers, and not fit for use as a generic shell.  Here are just
 a few reasons vanilla IPython and pysh+IPython is not usable as a system
 shell:
 
-  - obviously not completely bash-like (nor should it be): 'cd <dir>' works but 'tail -f <file>' does not
-  - configuration is too confusing: profiles vs. rc-files vs programmatic api
+  - not completely bash-like (nor should it be): 'cd <dir>' works but 'tail -f <file>' does not
+  - configuration can be confusing for nonpython devs: profiles vs. rc-files vs programmatic api's vs python-startup environment variables, and other options
 
 Although IPython is flexible enough to do almost anything in terms of whatever
 triggers, aliases, macros, input pre/post-processing.. adding fancy stuff on to
@@ -90,18 +72,18 @@ simultaneously as a shell and a sort of sketchbook for programming.  The
 chimera, and SmaSh leverages everything it offers:
 
   - Simple: all the simplicity of bash when you want it
-  - Flexible: all the power of a RealProgrammingLanguage(tm) when you need it
+  - Flexible: all the power of python if you need that
   - Unsurprising: bashy commands and pythony code both work the way you would expect
   - Hybrid: Mixing python and shell code is possible
 
 SmaSh is also extensible, and actually has very little core functionality.
 A big part of what it offers is just an organized approach to configuration
 management and plugins.  In fact, almost all of what it does happens through
-plugins!  Apart from what the bash/python hybrid features that come from pysh,
+plugins.  Apart from what the bash/python hybrid features that come from pysh,
 SmaSh also inherits all the flexibility of IPython in terms of I/O hooks and
 pre/post processing.  So go nuts with your domain specific language or ruby's
 pry shell or go attach a lisp/lua/node runtime onto this frankenstein
-bananaphone piano, see if I care.
+bananaphone piano, just see if I care.
 
 ================
 SmaSh Philosophy
@@ -112,10 +94,9 @@ the system level.  This is important because, as you continue to add plugins to
 smash, any third-party support libraries that are required won't clutter up the
 rest of your system.  In particular,
 
-   - Installation, including IPython, is completely inside a python venv at *~/.smash*
+   - Installation, including IPython and other requirements, is completely inside a python venv at *~/.smash*
    - All configuration is JSON, stored in *~/.smash/etc*
    - All plugins are in *~/.smash/plugins*
-   - Core support libraries live in *~/.smash/smashlib*
 
 ==========
 SmaSh Core
@@ -146,8 +127,7 @@ Project names should be kept unique.::
 
 Editor and editor preferences
 -----------------------------
-The editor is invoked by the "ed" magic command.  Editing a file will trigger the
-"edit" signal on the SmaSh bus, in case plugins want to trigger on the event.
+The editor is invoked by the "ed" magic command.  Editing a file will trigger the "edit" signal on the SmaSh bus, in case plugins want to trigger on the event.
 Arguments to "ed" may be python objects, or files.
 
     - editor preferences are defined in *~/.smash/etc/editor.json*
@@ -156,8 +136,6 @@ Arguments to "ed" may be python objects, or files.
 
 Prompt and Aliases:
 -------------------
-
-::
 
   - Alias configuration is stored with JSON
   - Aliases can be global, or stored per project
@@ -266,7 +244,6 @@ Python Specific Plugins for SmaSh
 
 Misc extra completers::
 
-   - Completers for accessing python dictionaries
    - Completers for setup.py
    - Pip and easy_install completers
       - Completion over the standard pip subcommands
@@ -275,7 +252,7 @@ Misc extra completers::
 
 Virtual-Environments::
 
-  - Venv's can be activated/deactivated cleanly, and without lasting side-effects
+  - Venv's can be activated/deactivated cleanly; module availability side-effects will not persist between venvs
   - Close integration with projects such that
      - if a project is activated and it is a venv, it will be activated
      - if a project contains a venv at the top-level, that venv will be activated
@@ -308,16 +285,12 @@ Enhanced **which** with cascading search behaviour::
 Installation and Prerequisites
 ==============================
 
-SmaSh works well with python 2.6, and 2.7 and possibly earlier.  SmaSh is compatible
-with python3 only insofar as IPython is.  You will need virtualenv installed at the
-system level ( in debian-based distros, use **apt-get install python-virtualenv**),
-but anything else that is required should be installed automatically by the
-following steps.
+SmaSh works well with python 2.7 and possibly earlier.  You will need virtualenv installed at the system level ( in debian-based distros, use **apt-get install python-virtualenv**), but anything else that is required should be installed automatically by the following steps.
 
   To install, clone this repository::
 
     $ mkdir ~/code; cd ~/code
-    $ git clone git://github.com/mattvonrocketstein/smash.git
+    $ git clone git://github.com/mattvonrocketstein/smashlib.git
 
   Install it (development mode obligatory for now, since SmaSh is beta)::
 
