@@ -13,9 +13,12 @@ QUICKSTART
 ==========
 
 ```shell
-  $ mkdir ~/.smash && cd ~/.smash
+  $ mkdir ~/.smash
+  $ cd ~/.smash
+  $ virtualenv --no-site-packages .
+  $ ./bin/pip install fabric==1.10.0
   $ git clone https://github.com/mattvonrocketstein/smashlib.git .
-  $ python install.py
+  $ ./bin/python install.py
   $ ~/bin/smash
 ```
 
