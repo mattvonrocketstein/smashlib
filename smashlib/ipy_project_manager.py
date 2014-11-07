@@ -12,9 +12,8 @@ def load_ipython_extension(ip):
     pmi = ProjectManagerInterface()
     ProjectManager.interface = pmi
     pm = ProjectManager(ip)
-    pmi._project_manager = pm
+    pm.init_pmi(pmi)
 
-    ip.user_ns['proj'] = pmi
     ProjectMagics.project_manager = pm
     ip.register_magics(ProjectMagics)
     return pm

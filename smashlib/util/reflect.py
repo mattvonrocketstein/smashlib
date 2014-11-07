@@ -23,11 +23,11 @@ except ImportError:
 
 RegexType = type(re.compile(""))
 
-
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
 
 class Settable:
     """
@@ -199,7 +199,7 @@ class Summer(Accessor):
     sums'.  Have a tuple in your class like the following::
 
         sums=(('amount','credit','credit_total'),
-              ('amount','debit','debit_total'))
+            ('amount','debit','debit_total'))
 
     and the 'credit_total' member of the 'credit' member of self will
     always be incremented when the 'amount' member of self is
@@ -475,7 +475,7 @@ def macro(name, filename, source, **identifiers):
 
     This allows you to create macro-like behaviors in python.
     """
-    if not identifiers.has_key('name'):
+    if not identifiers 'name':
         identifiers['name'] = name
     source = source % identifiers
     codeplace = "<%s (macro)>" % filename
@@ -484,7 +484,7 @@ def macro(name, filename, source, **identifiers):
     # shield your eyes!
     sm = sys.modules
     tprm = "twisted.python.reflect.macros"
-    if not sm.has_key(tprm):
+    if sm not in tprm:
         macros = new.module(tprm)
         sm[tprm] = macros
         macros.count = 0
@@ -507,15 +507,11 @@ def macro(name, filename, source, **identifiers):
     exec code in dict, dict
     return dict[name]
 
-
-
 def _determineClass(x):
     try:
         return x.__class__
     except:
         return type(x)
-
-
 
 def _determineClassName(x):
     c = _determineClass(x)
@@ -526,7 +522,6 @@ def _determineClassName(x):
             return str(c)
         except:
             return '<BROKEN CLASS AT %s>' % str(c)
-
 
 
 def _safeFormat(formatter, o):
@@ -544,7 +539,6 @@ def _safeFormat(formatter, o):
             className, str(o), formatter.__name__, tbValue)
 
 
-
 def safe_repr(o):
     """
     safe_repr(anything) -> string
@@ -553,7 +547,6 @@ def safe_repr(o):
     traceback, if that object's __repr__ raised an exception.
     """
     return _safeFormat(repr, o)
-
 
 
 def safe_str(o):
@@ -565,18 +558,6 @@ def safe_str(o):
     """
     return _safeFormat(str, o)
 
-
-
-##the following were factored out of usage
-
-def allYourBase(classObj, baseClass=None):
-    """allYourBase(classObj, baseClass=None) -> list of all base
-    classes that are subclasses of baseClass, unless it is None,
-    in which case all bases will be added.
-    """
-    l = []
-    accumulateBases(classObj, l, baseClass)
-    return l
 
 
 def accumulateBases(classObj, l, baseClass=None):
@@ -643,7 +624,6 @@ def accumulateMethods(obj, dict, prefix='', curClass=None):
             and (len(optName))):
             dict[optName] = getattr(obj, name)
 
-
 def accumulateClassDict(classObj, attr, adict, baseClass=None):
     """Accumulate all attributes of a given name in a class heirarchy into a single dictionary.
 
@@ -681,9 +661,9 @@ def accumulateClassDict(classObj, attr, adict, baseClass=None):
 
 
 def accumulateClassList(classObj, attr, listObj, baseClass=None):
-    """Accumulate all attributes of a given name in a class heirarchy into a single list.
-
-    Assuming all class attributes of this name are lists.
+    """Accumulate all attributes of a given name in a class
+        heirarchy into a single list. Assuming all class attributes
+        of this name are lists.
     """
     for base in classObj.__bases__:
         accumulateClassList(base, attr, listObj)
@@ -708,10 +688,8 @@ def isOfType(start, goal):
             (isinstance(start, types.InstanceType) and
              start.__class__ is goal))
 
-
 def findInstances(start, t):
     return objgrep(start, t, isOfType)
-
 
 def objgrep(start, goal, eq=isLike, path='', paths=None, seen=None, showUnknowns=0, maxDepth=None):
     '''An insanely CPU-intensive process for finding stuff.
@@ -732,26 +710,38 @@ def objgrep(start, goal, eq=isLike, path='', paths=None, seen=None, showUnknowns
     seen[id(start)] = start
     if isinstance(start, types.DictionaryType):
         for k, v in start.items():
-            objgrep(k, goal, eq, path+'{'+repr(v)+'}', paths, seen, showUnknowns, maxDepth)
-            objgrep(v, goal, eq, path+'['+repr(k)+']', paths, seen, showUnknowns, maxDepth)
+            objgrep(k, goal, eq,
+                    path + '{' + repr(v) + '}', paths,
+                    seen, showUnknowns, maxDepth)
+            objgrep(v, goal, eq, path+'[' + repr(k) + ']',
+                    paths, seen, showUnknowns, maxDepth)
     elif isinstance(start, (list, tuple, deque)):
         for idx in xrange(len(start)):
-            objgrep(start[idx], goal, eq, path+'['+str(idx)+']', paths, seen, showUnknowns, maxDepth)
+            objgrep(
+                start[idx], goal, eq, path+'[' + str(idx) + ']',
+                paths, seen, showUnknowns, maxDepth)
     elif isinstance(start, types.MethodType):
-        objgrep(start.im_self, goal, eq, path+'.im_self', paths, seen, showUnknowns, maxDepth)
-        objgrep(start.im_func, goal, eq, path+'.im_func', paths, seen, showUnknowns, maxDepth)
-        objgrep(start.im_class, goal, eq, path+'.im_class', paths, seen, showUnknowns, maxDepth)
+        objgrep(start.im_self, goal, eq, path + '.im_self',
+                paths, seen, showUnknowns, maxDepth)
+        objgrep(start.im_func, goal, eq, path + '.im_func',
+                paths, seen, showUnknowns, maxDepth)
+        objgrep(start.im_class, goal, eq, path + '.im_class',
+                paths, seen, showUnknowns, maxDepth)
     elif hasattr(start, '__dict__'):
         for k, v in start.__dict__.items():
-            objgrep(v, goal, eq, path+'.'+k, paths, seen, showUnknowns, maxDepth)
+            objgrep(v, goal, eq, path+'.' + k, paths, seen,
+                    showUnknowns, maxDepth)
         if isinstance(start, types.InstanceType):
-            objgrep(start.__class__, goal, eq, path+'.__class__', paths, seen, showUnknowns, maxDepth)
+            objgrep(start.__class__, goal, eq,
+                    path + '.__class__', paths,
+                    seen, showUnknowns, maxDepth)
     elif isinstance(start, weakref.ReferenceType):
-        objgrep(start(), goal, eq, path+'()', paths, seen, showUnknowns, maxDepth)
-    elif (isinstance(start, types.StringTypes+
-                    (types.IntType, types.FunctionType,
-                     types.BuiltinMethodType, RegexType, types.FloatType,
-                     types.NoneType, types.FileType)) or
+        objgrep(start(), goal, eq, path + '()', paths,
+                seen, showUnknowns, maxDepth)
+    elif (isinstance(start, types.StringTypes +\
+                     (types.IntType, types.FunctionType,
+                      types.BuiltinMethodType, RegexType, types.FloatType,
+                      types.NoneType, types.FileType)) or
           type(start).__name__ in ('wrapper_descriptor', 'method_descriptor',
                                    'member_descriptor', 'getset_descriptor')):
         pass
@@ -785,18 +775,14 @@ def filenameToModuleName(fn):
     return modName
 from_dotpath = namedAny
 
-
 __all__ = [
     'InvalidName', 'ModuleNotFound', 'ObjectNotFound',
-
     'ISNT', 'WAS', 'IS',
-
     'Settable', 'AccessorType', 'PropertyAccessor', 'Accessor', 'Summer',
     'QueueMethod', 'OriginalAccessor',
-
     'funcinfo', 'fullFuncName', 'qual', 'getcurrent', 'getClass', 'isinst',
     'namedModule', 'namedObject', 'namedClass', 'namedAny',
-    'safe_repr', 'safe_str', 'allYourBase', 'accumulateBases',
+    'safe_repr', 'safe_str', 'accumulateBases',
     'prefixedMethodNames', 'addMethodNamesToDict', 'prefixedMethods',
     'accumulateClassDict', 'accumulateClassList', 'isSame', 'isLike',
     'modgrep', 'isOfType', 'findInstances', 'objgrep', 'filenameToModuleName',

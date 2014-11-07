@@ -23,14 +23,18 @@ class PyLinter(Linter):
 
     def __call__(self, _dir):
         require_bin('flake8')
+        ignore = [
+            'E501', # line-too-long
+            ]
         base_cmd = 'cd {0} && flake8 {0}'
         cmd = base_cmd
         exclude = ['*build/*']
         for venv_dir in find_venvs(_dir):
             exclude.append(venv_dir)
-        if exclude:
-            exclude = ','.join(exclude)
-            exclude = ' --exclude='+exclude
+        ignore = ','.join(ignore)
+        exclude = ','.join(exclude)
+        exclude = ' --exclude='+exclude
+        ignore = ' --ignore='+ignore
         cmd = cmd.format(_dir) +  (exclude or '')
         output = self.cmd_exec(cmd)
         bad_files = [x.split(':')[0] for x in output.split('\n')]

@@ -197,16 +197,16 @@ class ProjectManager(Reporter):
         from smashlib.util import guess_dir_type
         return guess_dir_type(pdir)
 
-    def _lint_python(self, pname, pdir):
+    def _lint_python(self, pdir):
         """ """
         from smashlib.util.linter import PyLinter
         cmd_exec = self.smash.system
-        reporter = self.report
-        linter = PyLinter(
-            cmd_exec=self.smash.system,)
-
+        linter = PyLinter(cmd_exec=self.smash.system,)
         linter(pdir)
 
+    def init_pmi(self, pmi):
+        ProjectManagerInterface._project_manager = self
+        self.smash.shell.user_ns['proj'] = pmi
 
 class ProjectManagerInterface(object):
     """ This object should be a singleton and will be assigned to
@@ -217,14 +217,27 @@ class ProjectManagerInterface(object):
     _project_manager = None
 
     @property
-    def _report(self):
-        return self._project_manager.report
+    def _type(self):
+        return self._project_manager.guess_project_type(
+            self._project_manager._current_project)
 
     @property
-    def _type(self):
-        pm = self._project_manager
-        project_name = pm._current_project
-        return pm.guess_project_type(project_name)
+    def _venvs(self):
+        from smashlib.util.venv import find_venvs
+        return find_venvs(
+            self._project_managerproject_map[self._project_manager_current_project])
+
+
+    def _ack(self, pat):
+        """ TODO: should really be some kind of magic """
+        venvs = self._venvs
+        cmd = 'ack "{0}" "{1"} {2}'
+        pdir = self._project_manager.project_map[
+            self._project_manager._current_project]
+        ignores = ['--ignore-dir="{0}"'.format(venv) for venv in venvs]
+        ignores = ' '.join(ignores)
+        cmd = cmd.format(pat, pdir,ignores)
+        self._project_managersmash.system(cmd)
 
     @property
     def _lint(self):
@@ -239,9 +252,8 @@ class ProjectManagerInterface(object):
                       for ptype in project_types ]
         lint_fxns = filter(None,lint_fxns)
         if not lint_fxns:
-            msg = "no linters found for project-type: "+str(project_type)
+            msg = "no linters found for project-type: "+str(project_types)
             pm.report(msg)
         else:
-            out = [ lint_fxn(project_name,
-                             pm.project_map[project_name]) \
+            out = [ lint_fxn(pm.project_map[project_name]) \
                     for  lint_fxn in lint_fxns ]

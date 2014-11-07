@@ -55,8 +55,8 @@ class VirtualEnvSupport(Reporter):
             return False
         else:
             if not ope(venv):
-                err = 'refusing to deactivate (relocated?) venv'
-                raise RuntimeError(err)
+                self.smash.warning('refusing to deactivate (relocated?) venv')
+                return #raise RuntimeError(err)
 
             del os.environ['VIRTUAL_ENV']
             path = get_path()
