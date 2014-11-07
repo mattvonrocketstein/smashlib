@@ -11,7 +11,7 @@ from IPython.utils.traitlets import Bool
 
 from smashlib.v2 import Reporter
 from smashlib.ipy_cd_hooks import CD_EVENT
-from smashlib.util import receives_event
+from smashlib.util.events import receives_event
 
 lp_f = os.path.join(os.path.dirname(__file__), 'liquidprompt')
 C_UPDATE_PROMPT_REQUEST = 'udpate_prompt_request'

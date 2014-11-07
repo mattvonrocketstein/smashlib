@@ -17,3 +17,15 @@ c = get_config()
 # add custom directory hooks here
 c.ChangeDirHooks.change_dir_hooks.append(
     "smashlib.ipy_cd_hooks.ChangeDirHooks.test_change_message")
+
+# everything below this line should not ultimately be in this file..
+#
+c.TerminalInteractiveShell.editor = 'emacsclient -n'
+
+# TODO: SmashAliasManager, which respects project settings
+c.AliasManager.user_aliases.append(('ack', 'ack-grep'))
+c.AliasManager.user_aliases.append(('st', 'git status'))
+c.AliasManager.user_aliases.append(('gds', 'git diff --stat'))
+c.AliasManager.user_aliases.append(('gd', 'git diff'))
+c.AliasManager.user_aliases.append(
+    ('irc','xchat -d ~/code/dotfiles/xchat_default&'))

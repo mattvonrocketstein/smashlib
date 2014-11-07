@@ -11,7 +11,7 @@ from smashlib.ipy_cd_hooks import CD_EVENT
 from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
 
 from smashlib.v2 import Reporter
-from smashlib.util import receives_event
+from smashlib.util.events import receives_event
 from smashlib.util import truncate_fpath
 from smashlib.python import abspath, expanduser
 from smashlib.util.venv import contains_venv

@@ -10,6 +10,8 @@ from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL
 from IPython.terminal.interactiveshell import \
      TerminalInteractiveShell as BaseTIS
 
+from IPython.core.interactiveshell import StrDispatch
+
 class SmashTerminalInteractiveShell(BaseTIS):
 
     def __init__(self,*args,**kargs):
@@ -66,5 +68,14 @@ class SmashTerminalIPythonApp(BaseTIA):
             ipython_dir=self.ipython_dir,
             user_ns=self.user_ns)
         self.shell.configurables.append(self)
+        from smashlib.bin.pybcompgen import complete
+        from smashlib.pysh import have_command_alias
+        def my_matcher(text):
+            line = self.shell.Completer.readline.get_line_buffer()
+            if have_command_alias(line.split()[0]):
+                return complete(line)
+            return []
+        self.shell.Completer.matchers=[my_matcher] + \
+                                       self.shell.Completer.matchers
 TerminalIPythonApp = SmashTerminalIPythonApp
 launch_new_instance = TerminalIPythonApp.launch_instance

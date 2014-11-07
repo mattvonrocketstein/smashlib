@@ -10,9 +10,9 @@ from IPython.utils.traitlets import Bool
 from IPython.core.magic import Magics, magics_class, line_magic
 
 from smashlib.v2 import Reporter
-from smashlib.util import receives_event
 from smashlib.util import truncate_fpath
 from smashlib.python import opj, ope, abspath, expanduser
+from smashlib.util.events import receives_event
 from smashlib.util.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
 
 # channel names for use with the smash bus

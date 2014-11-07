@@ -12,7 +12,7 @@ from IPython.utils.traitlets import EventfulList, List, Bool
 from smashlib.v2 import Reporter
 from smashlib.util.reflect import from_dotpath, ObjectNotFound
 from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL, C_WARNING
-from smashlib.util import receives_event
+from smashlib.util.events import receives_event
 
 class Smash(Reporter):
     extensions = List(default_value=[], config=True)
@@ -53,6 +53,9 @@ class Smash(Reporter):
         self.init_bus()
         self.init_extensions()
         self.parse_argv()
+        from smashlib.util import bash
+        for alias,cmd in bash.get_aliases():
+            self.shell.magic("alias {0} {1}".format(alias,cmd))
 
     def init_bus(self):
         """ note: it is a special case that due to bootstrap ordering,
