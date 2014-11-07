@@ -5,7 +5,7 @@ IPython extension to fix pysh profile
 from IPython.core.prefilter import PrefilterHandler, Unicode, PrefilterChecker
 
 HANDLER_NAME = 'ShellHandler'
-
+ 
 
 class ShellChecker(PrefilterChecker):
     """ shell checker should really run before anything else """
@@ -32,7 +32,7 @@ class ShellHandler(PrefilterHandler):
         return 'get_ipython().system(%r)' % (cmd, )
 
 
-def have_alias(x):
+def have_command_alias(x):
     """ this helper function is fairly expensive to be running on
         (almost) every input line.  perhaps it should be cached, but
 
@@ -51,7 +51,7 @@ def have_alias(x):
         alias_list = get_ipython().alias_manager.aliases
         cmd_list = [cmd for alias, cmd in alias_list]
         return x in cmd_list
-
+have_alias=have_command_alias
 
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""
