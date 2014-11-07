@@ -4,7 +4,6 @@
 """
 import types
 import os, sys, glob
-from unipath import FSPath
 
 from smashlib.python import opj, ope, expanduser, abspath
 from smashlib.util import truncate_fpath
@@ -19,7 +18,7 @@ def is_venv(dir):
     """ naive.. but seems to work
         TODO: find a canonical version of this function or refine it
     """
-    if FSPath( opj(dir, 'bin', 'activate_this.py')).exists():
+    if ope( opj(dir, 'bin', 'activate_this.py')):
         return dir
 
 
