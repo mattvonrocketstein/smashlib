@@ -90,6 +90,8 @@ class ProjectManager(Reporter):
             contents = os.listdir(unicode(base_dir))
             bind_list = []
             for name in contents:
+                if name.startswith('.'):
+                    self.report("skipping "+name)
                 path = os.path.join(base_dir, name)
                 #raise Exception,path
                 self.project_map[name] = path
