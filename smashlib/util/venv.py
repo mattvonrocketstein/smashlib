@@ -22,7 +22,7 @@ def is_venv(dir):
         return dir
 
 
-def contains_venv(_dir, report=None):
+def contains_venv(_dir, **kargs):
     """ ascertain whether _dir is, or if it contains, a venv.
         returns the first matching path according to the heuritic:
 
@@ -30,24 +30,34 @@ def contains_venv(_dir, report=None):
           2) if the directory has subdir(s) that are venvs, return the first
           3) no venv found?  return None
     """
+    kargs.update(max_venvs=1)
+    venvs = find_venvs(_dir, **kargs)
+    return venvs and venvs[0]
+
+def find_venvs(_dir, report=None, max_venvs=None):
     _dir = abspath(expanduser(_dir))
-    print _dir
+    venvs = []
     if is_venv(_dir):
-        return _dir
-    else:
-        count = 1
-        for dirpath,dirnames,filenames in os.walk(_dir):#).walk(top_down=False):
+        return venvs.append(_dir)
+
+    count = 1
+    for dirpath, dirnames, filenames in os.walk(_dir):
+            if len(venvs) == max_venvs:
+                break
             # trick to make sure we dont process .git/.tox first, etc
             dirnames = [x for x in reversed(sorted(dirnames))]
             for subdir in dirnames:
-                count+=1
+                count += 1
                 subdir = opj(dirpath, subdir)
                 if is_venv(subdir):
-                    return subdir
-        if report is not None:
+                    venvs.append(subdir)
+
+    if report is not None and not venvs:
             assert callable(report)
             msg = "contains_venv({0}):"
             report(msg.format(_dir))
             msg = "  searched {0} subdirectories: found no python venv's"
             msg = msg.format(count)
             report(msg)
+
+    return venvs

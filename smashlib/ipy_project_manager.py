@@ -10,12 +10,12 @@ def load_ipython_extension(ip):
     """ called by %load_ext magic"""
     ip = get_ipython()
     pmi = ProjectManagerInterface()
-    ProjectManager.pmi = pmi
+    ProjectManager.interface = pmi
     pm = ProjectManager(ip)
-    #pmi.pm = pm
+    pmi._project_manager = pm
 
     ip.user_ns['proj'] = pmi
-    ProjectMagics.pm = pm
+    ProjectMagics.project_manager = pm
     ip.register_magics(ProjectMagics)
     return pm
 

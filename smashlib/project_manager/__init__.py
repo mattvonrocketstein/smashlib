@@ -22,18 +22,17 @@ from smashlib.project_manager.util import (
 class ProjectMagics(Magics):
     @line_magic
     def activate(self, parameter_s=''):
-        self.pm.activate_project(parameter_s)
+        self.project_manager.activate_project(parameter_s)
 
     @line_magic
     def add_project(self, parameter_s=''):
         name = parameter_s.split()[0]
-        path=parameter_s[len(name)+1:]
-        print 'would have added project_map[{0}]={1}'.format(name,path)
-        #self.pm.project_map[name]=path
+        path = parameter_s[len(name)+1:]
+        self.project_manager.project_map[name]=path
 
     @line_magic
     def jump(self, parameter_s=''):
-        self.pm.jump_project(parameter_s)
+        self.project_manager.jump_project(parameter_s)
 
 class ProjectManager(Reporter):
     search_dirs    = EventfulList(default_value=[], config=True)
@@ -41,6 +40,8 @@ class ProjectManager(Reporter):
     alias_map      = EventfulDict(default_value={}, config=True)
     activation_map = EventfulDict(default_value={}, config=True)
     venv_map       = EventfulDict(default_value={}, config=True)
+
+    _current_project = None
 
     @receives_event(CD_EVENT)
     def cd_hook(self, new_dir, old_dir):
@@ -68,7 +69,7 @@ class ProjectManager(Reporter):
             if not os.path.exists(path):
                 self.report("bound project {0} to nonexistent {1}".format(
                     name, path))
-            self.update_pmi()
+            self.update_interface()
         name = key
         clean_name = clean_project_name(name)
         clean_path = abspath(expanduser(val))
@@ -96,7 +97,7 @@ class ProjectManager(Reporter):
                 self.project_map[name] = path
             self.report("discovered {0} projects under '{1}'".format(
                 len(bind_list), base_dir))
-        self.update_pmi()
+        self.update_interface()
 
     def _get_prop(self, name, path):
         def fxn(himself):
@@ -104,7 +105,7 @@ class ProjectManager(Reporter):
         out = property(fxn)
         return out
 
-    def update_pmi(self):
+    def update_interface(self):
         for name, path in self.project_map.items():
             prop = self._get_prop(name, path)
             setattr(ProjectManagerInterface, name, prop)
@@ -136,42 +137,76 @@ class ProjectManager(Reporter):
                 self.publish('warning', msg)
         return args, unknown
 
+    def _guess_activation_steps(self, name, dir):
+        found_venv = None
+        default_venv_dir = self.venv_map.get(name, None)
+        if default_venv_dir:
+            default_venv = contains_venv(default_venv_dir,
+                                         report=self.report)
+            if not default_venv:
+                msg = ("ProjectManager.venv_map uses {0}, "
+                       "but no venv was found")
+                msg = msg.format(default_venv_dir)
+                self.publish('warning', msg)
+            else:
+                found_venv = default_venv
+                self.report("venv_map specifies to use {0}".format(
+                    truncate_fpath(found_venv)))
+        else:
+            found_venv = contains_venv(dir, report=self.report)
+
+        if found_venv:
+            self.shell.magic('venv_activate {0}'.format(found_venv))
+            return True
+        else:
+            msg = "no activation steps are understood for {0}".format(name)
+            self.report(msg)
+        self._current_project = name
+
+    def _guess_deactivation_steps(self, name, _dir):
+        self.shell.magic('venv_deactivate')
+
+    def deactivate(self):
+        name = self._current_project
+        if name is None:
+            return
+        self._require_project(name)
+        _dir = self.project_map[name]
+        self.report("deactivating: "+name)
+        deactivation_steps = [] #self.deactivation_map.get(name, [])
+        if not deactivation_steps:
+            activation_steps = self._guess_deactivation_steps(name, _dir)
+        self._current_project = None
+
     def activate_project(self, name):
-
-        def guess_activation_steps(dir):
-            found_venv = None
-            default_venv_dir = self.venv_map.get(name, None)
-            if default_venv_dir:
-                default_venv = contains_venv(default_venv_dir,
-                                             report=self.report)
-                if not default_venv:
-                    msg = ("ProjectManager.venv_map uses {0}, "
-                           "but no venv was found")
-                    msg = msg.format(default_venv_dir)
-                    self.publish('warning', msg)
-                else:
-                    found_venv = default_venv
-                    self.report("venv_map specifies to use {0}".format(
-                        truncate_fpath(found_venv)))
-            else:
-                found_venv = contains_venv(dir, report=self.report)
-
-            if found_venv:
-                self.shell.magic('venv_activate {0}'.format(found_venv))
-                return True
-            else:
-                msg = "no activation steps are understood for {0}".format(name)
-                self.report(msg)
-
+        self.deactivate()
+        self.report("activating: "+name)
         self._require_project(name)
         _dir = self.project_map[name]
         activation_steps = self.activation_map.get(
             name, [])
         if not activation_steps:
-            activation_steps = guess_activation_steps(_dir)
+            activation_steps = self._guess_activation_steps(name, _dir)
 
         if not os.getcwd()==self.project_map[name]:
             self.jump_project(name)
+        self._current_project = name
+
+    def guess_project_type(self, project_name):
+        pdir = self.project_map[project_name]
+        from smashlib.util import guess_dir_type
+        return guess_dir_type(pdir)
+
+    def _lint_python(self, pname, pdir):
+        """ """
+        from smashlib.util.linter import PyLinter
+        cmd_exec = self.smash.system
+        reporter = self.report
+        linter = PyLinter(
+            cmd_exec=self.smash.system,)
+
+        linter(pdir)
+
 
 class ProjectManagerInterface(object):
     """ This object should be a singleton and will be assigned to
@@ -179,4 +214,34 @@ class ProjectManagerInterface(object):
         you see below, The ProjectManager extension
         will dynamically add/remove properties on to this
     """
-    pass
+    _project_manager = None
+
+    @property
+    def _report(self):
+        return self._project_manager.report
+
+    @property
+    def _type(self):
+        pm = self._project_manager
+        project_name = pm._current_project
+        return pm.guess_project_type(project_name)
+
+    @property
+    def _lint(self):
+        pm = self._project_manager
+        project_name = pm._current_project
+        if project_name is None:
+            pm.report("No project has been selected.")
+            return
+
+        project_types = self._type
+        lint_fxns = [ getattr(pm,'_lint_'+ptype, None) \
+                      for ptype in project_types ]
+        lint_fxns = filter(None,lint_fxns)
+        if not lint_fxns:
+            msg = "no linters found for project-type: "+str(project_type)
+            pm.report(msg)
+        else:
+            out = [ lint_fxn(project_name,
+                             pm.project_map[project_name]) \
+                    for  lint_fxn in lint_fxns ]

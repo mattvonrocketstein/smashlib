@@ -6,6 +6,8 @@ from IPython.utils.coloransi import TermColors
 from IPython.utils.traitlets import Bool
 from IPython.utils.traitlets import EventfulList, EventfulDict
 
+from smashlib.util.ipy import Reporter as RBase
+
 class EventfulMix(object):
 
     def _init_elist(self, name, elist):
@@ -105,16 +107,6 @@ class Base(Configurable, EventfulMix):
                 y = getattr(self, x)
                 self.smash.bus.subscribe(channel, y)
 
-class Reporter(Base):
-    verbose = Bool(False, config=True)
 
-    def report(self, msg, *args, **kargs):
-        force = kargs.pop('force', False)
-        if self.verbose or force:
-            print "{0}: {1} {2}".format(
-                TermColors.Blue + self.__class__.__name__,
-                TermColors.Red + msg,
-                TermColors.Normal
-                )
-            if args:
-                print '  ',args
+class Reporter(Base, RBase):
+    verbose = Bool(False, config=True)

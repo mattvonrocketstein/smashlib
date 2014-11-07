@@ -28,6 +28,11 @@ class VirtualEnvMagics(Magics):
         self.report("venv_activate: "+parameter_s)
         self.vext.activate(parameter_s)
 
+    @line_magic
+    def venv_deactivate(self, parameter_s=''):
+        self.report("venv_deactivate: "+parameter_s)
+        self.vext.deactivate()
+
     @property
     def report(self):
         return self.vext.report

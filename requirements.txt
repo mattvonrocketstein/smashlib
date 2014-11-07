@@ -8,3 +8,4 @@ asciitable
 #pynotify
 #dulwhich
 fabric
+flake8

@@ -21,6 +21,11 @@ class Smash(Reporter):
     verbose_events = Bool(False, config=True)
     load_bash_aliases = Bool(False, config=True)
 
+    def system(self, cmd):
+        from smashlib.util._fabric import qlocal
+        self.report("run: "+cmd)
+        return qlocal(cmd, capture=True)
+
     def init_extensions(self):
         record = {}
         for dotpath in self.extensions:

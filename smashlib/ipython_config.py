@@ -16,15 +16,14 @@ c.InteractiveShellApp.extensions.append("smashlib.ipy_smash")
 # every smash component gets it's own verbosity setting.
 # this mostly controls the printing of debugging info
 c.Smash.verbose = True
-c.Smash.verbose_events = True
 c.LiquidPrompt.verbose = True
 c.ProjectManager.verbose = True
 c.ChangeDirHooks.verbose = True
 c.VirtualEnvSupport.verbose = True
-
 # configure smash
 ################################################################################
 
+c.Smash.verbose_events = True
 c.Smash.load_bash_aliases = True
 
 # include various things that used to be
