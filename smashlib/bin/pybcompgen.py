@@ -60,7 +60,7 @@ def complete(to_complete):
            options.  have to account for that and still try to get all the
            options instead of just the first page
 
-        5) sending EOF does not working unless it comes after a newline.  this
+        5) sending EOF does not work unless it comes after a newline.  this
            means we have to take extra steps to avoid actually executing the
            command we want to complete (executing the command is not what the
            user expects and is possibly unsafe).  to avoid executing the line,

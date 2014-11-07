@@ -89,7 +89,7 @@ class InstallCommand(install):
         url = 'http://github.com/ipython/ipython.git'
         #or..  https://github.com/ipython/ipython/archive/master.zip
         self.report("cloning the official repo.  this might take a while")
-        self.report("  url: "+url)
+        self.report("clone url: "+url)
         ipy_clone_path = os.path.join(DOT_SMASH, 'ipython')
         if not os.path.exists(ipy_clone_path):
             with self.fab_api.settings(warn_only=True):
