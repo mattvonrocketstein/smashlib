@@ -21,10 +21,6 @@ class LiquidPrompt(Reporter):
 
     float    = Bool(True, config=True, help="add more space between prompts")
 
-    @receives_event(CD_EVENT)
-    def update_prompt_on_cd(self, new_dir, old_dir):
-        pass #self.update_prompt()
-
     @receives_event(C_UPDATE_PROMPT_REQUEST)
     def update_prompt_on_request(self, request_from):
         "NOTE: really need to update prompt every time anything has run.."

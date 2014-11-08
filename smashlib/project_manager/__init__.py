@@ -2,37 +2,19 @@
 """
 import os
 
-from IPython.utils.traitlets import Unicode
 from IPython.utils.traitlets import EventfulDict, EventfulList
-from IPython.utils.traitlets import Instance
-from IPython.core.magic import Magics, magics_class, line_magic
 
 from smashlib.ipy_cd_hooks import CD_EVENT
-from smashlib.ipy_liquidprompt import C_UPDATE_PROMPT_REQUEST
 
 from smashlib.v2 import Reporter
+from smashlib.util import guess_dir_type
 from smashlib.util.events import receives_event
 from smashlib.util import truncate_fpath
 from smashlib.python import abspath, expanduser
 from smashlib.util.venv import contains_venv
 from smashlib.project_manager.util import (
     clean_project_name, UnknownProjectError)
-
-@magics_class
-class ProjectMagics(Magics):
-    @line_magic
-    def activate(self, parameter_s=''):
-        self.project_manager.activate_project(parameter_s)
-
-    @line_magic
-    def add_project(self, parameter_s=''):
-        name = parameter_s.split()[0]
-        path = parameter_s[len(name)+1:]
-        self.project_manager.project_map[name]=path
-
-    @line_magic
-    def jump(self, parameter_s=''):
-        self.project_manager.jump_project(parameter_s)
+from smashlib.util.ipy import green
 
 class ProjectManager(Reporter):
     search_dirs    = EventfulList(default_value=[], config=True)
@@ -43,10 +25,17 @@ class ProjectManager(Reporter):
 
     _current_project = None
 
+    @property
+    def reverse_project_map(self):
+        return dict([[v,k] for k,v in self.project_map.items()])
+
     @receives_event(CD_EVENT)
     def cd_hook(self, new_dir, old_dir):
         if new_dir in self.project_map.values():
-            self.report("this directory is a project.")
+            project_name = self.reverse_project_map[new_dir]
+            _help='this directory is a project.  to activate it, type {0}'
+            _help = _help.format(green('proj.'+project_name))
+            self.info(_help)
 
     def init(self):
         # at this point project_map has been created from
@@ -83,15 +72,14 @@ class ProjectManager(Reporter):
     def _event_set_search_dirs(self, slice_or_index, base_dir):
         base_dir = os.path.abspath(os.path.expanduser(base_dir))
         if not os.path.exists(base_dir):
-            msg = "warning: new search_dir doesnt exist: {0}"
-            msg = msg.format(base_dir)
-            self.report(msg)
+            msg = "new search_dir doesnt exist: {0}"
+            self.warning(msg.format(base_dir))
         else:
             contents = os.listdir(unicode(base_dir))
             bind_list = []
             for name in contents:
                 if name.startswith('.'):
-                    self.report("skipping "+name)
+                    self.warning("skipping "+name)
                 path = os.path.join(base_dir, name)
                 #raise Exception,path
                 self.project_map[name] = path
@@ -99,15 +87,19 @@ class ProjectManager(Reporter):
                 len(bind_list), base_dir))
         self.update_interface()
 
-    def _get_prop(self, name, path):
-        def fxn(himself):
-            self.activate_project(name)
-        out = property(fxn)
-        return out
 
     def update_interface(self):
+        """ so that tab-completion works on any bound projects, the
+            properties on ProjectManagerInterface (aka user_ns['proj'])
+            will be updated
+        """
+        def _get_prop(name, path):
+            def fxn(himself):
+                self.activate_project(name)
+            out = property(fxn)
+            return out
         for name, path in self.project_map.items():
-            prop = self._get_prop(name, path)
+            prop = _get_prop(name, path)
             setattr(ProjectManagerInterface, name, prop)
 
     def _require_project(self, name):
@@ -134,7 +126,7 @@ class ProjectManager(Reporter):
                 self.activate_project(args.project)
             except UnknownProjectError:
                 msg = 'unknown project: {0}'.format(args.project)
-                self.publish('warning', msg)
+                self.warning(msg)
         return args, unknown
 
     def _guess_activation_steps(self, name, dir):
@@ -147,7 +139,7 @@ class ProjectManager(Reporter):
                 msg = ("ProjectManager.venv_map uses {0}, "
                        "but no venv was found")
                 msg = msg.format(default_venv_dir)
-                self.publish('warning', msg)
+                self.warning(msg)
             else:
                 found_venv = default_venv
                 self.report("venv_map specifies to use {0}".format(
@@ -194,7 +186,6 @@ class ProjectManager(Reporter):
 
     def guess_project_type(self, project_name):
         pdir = self.project_map[project_name]
-        from smashlib.util import guess_dir_type
         return guess_dir_type(pdir)
 
     def _lint_python(self, pdir):

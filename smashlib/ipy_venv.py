@@ -38,7 +38,6 @@ class VirtualEnvMagics(Magics):
         return self.vext.report
 
 
-
 class VirtualEnvSupport(Reporter):
 
     #not honored yet
@@ -55,7 +54,7 @@ class VirtualEnvSupport(Reporter):
             return False
         else:
             if not ope(venv):
-                self.smash.warning('refusing to deactivate (relocated?) venv')
+                self.warning('refusing to deactivate (relocated?) venv')
                 return #raise RuntimeError(err)
 
             del os.environ['VIRTUAL_ENV']

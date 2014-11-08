@@ -36,8 +36,7 @@ class ChangeDirHooks(Reporter):
                     self.report("error with cd.")
                     raise
                 else:
-                    this_dir = os.path.abspath(
-                        os.path.expanduser(parameter_s))
+                    this_dir = self.smash.system('pwd', quiet=True)
                     self.smash.bus.publish(CD_EVENT, this_dir, self.last_dir)
                     os.environ['PWD'] = this_dir
                     self.last_dir = this_dir

@@ -6,7 +6,32 @@ from IPython.utils.coloransi import TermColors
 from IPython.utils.traitlets import Bool
 from IPython.utils.traitlets import EventfulList, EventfulDict
 
-from smashlib.util.ipy import Reporter as RBase
+
+
+class SmashComponent(object):
+    def build_argparser(self):
+        import argparse
+        parser = argparse.ArgumentParser()
+        return parser
+
+    def parse_argv(self):
+        import sys
+        parser = self.build_argparser()
+        args, unknown = parser.parse_known_args(sys.argv[1:])
+        if len(vars(args)):
+            self.report("parsed argv: "+str(args))
+        return args, unknown
+
+    @property
+    def smash(self):
+        try:
+            return self.shell._smash
+        except AttributeError:
+            raise Exception("load smash first")
+
+    @property
+    def publish(self):
+        return self.smash.bus.publish
 
 class EventfulMix(object):
 
@@ -46,53 +71,73 @@ class EventfulMix(object):
                 out[name] = getattr(self, name)
         return out
 
-    def build_argparser(self):
-        import argparse
-        parser = argparse.ArgumentParser()
-        return parser
-
-    def parse_argv(self):
-        import sys
-        parser = self.build_argparser()
-        args, unknown = parser.parse_known_args(sys.argv[1:])
-        if len(vars(args)):
-            self.report("parsed argv: "+str(args))
-        return args, unknown
-
-
     def init_eventful(self):
         # initialize all elists.
         elists = self._get_eventful_type(EventfulList)
         for name, elist in elists.items():
             self._init_elist(name, elist)
 
-class Base(Configurable, EventfulMix):
+class Logger(object):
+    def __init__(self, component):
+        self.component = component
+
+    @property
+    def verbose(self):
+        return self.component.verbose
+    @property
+    def ignore_warnings(self):
+        return False
+    @property
+    def ignore_info(self):
+        return False
+
+    def report(self, msg, *args, **kargs):
+        force = kargs.pop('force', False)
+        if self.verbose or force:
+            header = kargs.pop('header','')
+            header = self.component.__class__.__name__ + ':' + header
+            header = TermColors.Blue + header
+            content = TermColors.Red + msg
+            print "{0}: {1} {2}".format(
+                header, content, TermColors.Normal)
+            if args:
+                print '  ',args
+
+    def warning(self,*args, **kargs):
+        if not self.ignore_warnings:
+            kargs['force'] = True
+            kargs['header'] = 'warning'
+            self.report(*args, **kargs)
+
+    def info(self, *args, **kargs):
+        if not self.ignore_info:
+            kargs['force'] = True
+            #kargs['header'] = ''
+            self.report(*args, **kargs)
+
+class Base(SmashComponent, EventfulMix, Configurable, ):
 
     def __init__(self, shell, **kargs):
         super(Base, self).__init__(config=shell.config, shell=shell)
         self.shell.configurables.append(self)
+        self.init_logger()
         self.report("initializing {0}".format(self))
         self.init_eventful()
         self.init_bus()
         self.init()
 
+    def init_logger(self):
+        self.logger = Logger(self)
+        self.report = self.logger.report
+        self.warning = self.logger.warning
+        self.info = self.logger.info
+
     def __str__(self):
         return '<SmashExtension: {0}>'.format(self.__class__.__name__)
     __repr__ = __str__
 
-    @property
-    def smash(self):
-        try:
-            return self.shell._smash
-        except AttributeError:
-            raise Exception("load smash first")
-
-    @property
-    def publish(self):
-        return self.smash.bus.publish
 
     def init(self):
-        #self.report("base self.init should probably be overridden")
         pass
 
     def init_bus(self):
@@ -108,5 +153,5 @@ class Base(Configurable, EventfulMix):
                 self.smash.bus.subscribe(channel, y)
 
 
-class Reporter(Base, RBase):
+class Reporter(Base):
     verbose = Bool(False, config=True)

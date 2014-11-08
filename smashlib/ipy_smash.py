@@ -11,19 +11,21 @@ import cyrusbus
 from IPython.utils.traitlets import EventfulList, List, Bool
 
 from smashlib.v2 import Reporter
-from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL, C_WARNING
+from smashlib.channels import C_POST_RUN_INPUT, C_POST_RUN_CELL
 from smashlib.util.reflect import from_dotpath, ObjectNotFound
 from smashlib.util.events import receives_event
 from smashlib.util import bash
+from smashlib import logging
 
 class Smash(Reporter):
     extensions = List(default_value=[], config=True)
     verbose_events = Bool(False, config=True)
     load_bash_aliases = Bool(False, config=True)
 
-    def system(self, cmd):
+    def system(self, cmd, quiet=False):
         from smashlib.util._fabric import qlocal
-        self.report("run: "+cmd)
+        if not quiet:
+            self.report("run: "+cmd)
         return qlocal(cmd, capture=True)
 
     def init_extensions(self):
@@ -36,7 +38,7 @@ class Smash(Reporter):
             if ext_obj is None:
                 msg = '{0}.load_ipython_extension should return an object'
                 msg = msg.format(dotpath)
-                self.publish('warning', msg)
+                self.warning(msg)
             #self.shell.magic('load_ext {0}'.format(extension))
         self.loaded_extensions = record
         self.report("loaded extensions:", self.loaded_extensions.keys())
@@ -77,7 +79,9 @@ class Smash(Reporter):
         """
         super(Smash,self).init_bus()
         bus = cyrusbus.Bus()
-        bus.subscribe(C_WARNING, self.warning)
+        def warning_dep(*args, **kargs):
+            raise Exception("dont send warning that way")
+        bus.subscribe('warning', warning_dep)
         bus.subscribe(C_POST_RUN_INPUT, self.input_finished_hook)
         self.bus = bus
 
@@ -92,10 +96,6 @@ class Smash(Reporter):
             if x in raw_finished_input:
                 self.report("detected possible $PATH changes (rehashing)")
                 self.shell.magic('rehashx')
-
-    def warning(self, bus, *args, **kwargs):
-        msg, rest = args[0], args[1:]
-        self.report("WARNING: "+msg, *rest, force=True)
 
 def load_ipython_extension(ip):
     """ called by %load_ext magic"""

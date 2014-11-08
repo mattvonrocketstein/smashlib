@@ -39,7 +39,8 @@ def guess_dir_type(_dir, max_depth=3):
     type_map = {
         '.py':'python',
         '.pp':'puppet',
-        '.md':'docs'
+        '.md':'docs',
+        'Vagrantfile':'vagrant',
         }
     # create a list based on max-depth like ['*', '*/*', '*/*/*', ..]
     globs = [os.path.sep.join(['*']*x) for x in range(1,max_depth+1)]

@@ -1,7 +1,6 @@
 """ smashlib.channels
 """
 
-C_WARNING = 'warning'
 C_POST_RUN_CELL = 'post_run_cell'
 C_POST_RUN_INPUT = 'post_run_input'
 
