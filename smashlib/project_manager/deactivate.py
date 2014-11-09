@@ -10,3 +10,6 @@ class NullDeactivation(NullOperationStep):
 
 def deactivate_python_venv(pm):
     pm.shell.magic('venv_deactivate')
+
+def deactivate_vagrant_project(pm):
+    pm.smash.system('vagrant halt')

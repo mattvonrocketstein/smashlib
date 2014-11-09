@@ -39,3 +39,6 @@ def activate_python_venv(project_manager):
 
     if found_venv:
         project_manager.shell.magic('venv_activate {0}'.format(found_venv))
+
+def activate_vagrant(pm):
+    pm.smash.system('vagrant up')

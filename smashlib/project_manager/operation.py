@@ -8,7 +8,7 @@ from smashlib.v2 import Reporter
 class OperationStep(Reporter):
     """ thin wrapper, basically a named lambda. """
     verbose = True
-    def __init__(self, name, fxn=None, args=tuple(), pm=None):
+    def __init__(self, name, fxn=None, pm=None, args=tuple(), ):
         self.project_manager = pm
         self.name = self.project_manager._current_project
         self.args = args
@@ -43,4 +43,5 @@ class NullOperationStep(OperationStep):
                    self.project_manager.report(
             'no project {0} steps are understood for "{1}"'.format(
                 self.operation_name, self.project_manager._current_project))
-        super(NullOperationStep, self).__init__(name, _callable)
+        super(NullOperationStep, self).__init__(
+            name, _callable, pm=project_manager)

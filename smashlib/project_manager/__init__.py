@@ -12,21 +12,31 @@ from smashlib.util import guess_dir_type
 from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
 from smashlib.v2 import Reporter
-from .activate import Activation, NullActivation, activate_python_venv
-from .deactivate import Deactivation, NullDeactivation, deactivate_python_venv
+from .activate import Activation, NullActivation
+from .check import Check, NullCheck, python_flakes
+from .activate import activate_vagrant, activate_python_venv
+from .deactivate import Deactivation, NullDeactivation
+from .deactivate import deactivate_python_venv
 
 ACTIVATE = dict(
-    python=[activate_python])
+    python=[activate_python_venv],
+    vagrant=[activate_vagrant],
+    )
+
+CHECK = dict(
+    python=[python_flakes])
+
 DEACTIVATE = dict(
     python=[deactivate_python_venv])
 
 class ProjectManager(Reporter):
-    search_dirs    = EventfulList(default_value=[], config=True)
-    project_map    = EventfulDict(default_value={}, config=True)
-    alias_map      = EventfulDict(default_value={}, config=True)
-    activation_map = EventfulDict(default_value={}, config=True)
+    search_dirs      = EventfulList(default_value=[], config=True)
+    project_map      = EventfulDict(default_value={}, config=True)
+    alias_map        = EventfulDict(default_value={}, config=True)
+    activation_map   = EventfulDict(default_value={}, config=True)
+    check_map        = EventfulDict(default_value={}, config=True)
     deactivation_map = EventfulDict(default_value={}, config=True)
-    venv_map       = EventfulDict(default_value={}, config=True)
+    venv_map         = EventfulDict(default_value={}, config=True)
 
     _current_project = None
 
@@ -152,11 +162,20 @@ class ProjectManager(Reporter):
         return self._guess_operation_steps(
             name, dir, operation_dict,
             Activation, NullActivation)
+    def _guess_check_steps(self, name, dir):
+        operation_dict = CHECK
+        return self._guess_operation_steps(
+            name, dir, operation_dict,
+            Check, NullCheck)
 
     def _guess_operation_steps(
         self, name, dir, operation_dict,
         step_kls, default_step):
-        assert inspect.isclass(step_kls) and inspect.isclass(default_step)
+        from smashlib.project_manager.operation import OperationStep,NullOperationStep
+        assert all([inspect.isclass(step_kls),
+                    inspect.isclass(default_step),
+                    issubclass(step_kls,OperationStep),
+                    issubclass(default_step,NullOperationStep)])
         steps = []
         ptype = self.guess_project_type(name)
 
@@ -168,51 +187,40 @@ class ProjectManager(Reporter):
                     fxn=fxn, args=(self,)) \
                 for fxn in these_steps]
         if not steps:
-            steps.append(default_step(pm=self))
+            steps.append(default_step(self))
         return steps
-
-
-    #def _guess_deactivation_steps(self, name, _dir):
-    #    return [lambda: self.shell.magic('venv_deactivate')]
 
     def deactivate(self):
         name = self._current_project
         if name is None:
             return
+        self.perform_operation(name, 'deactivation')
+        self._current_project = None
+
+    def perform_operation(self, name, op_name):
+        self.report("{0}: {1}".format(op_name,name))
         self._require_project(name)
         _dir = self.project_map[name]
-        _map = self.deactivation_map
-        self.report("deactivating: " + name)
-        default_steps = self._guess_deactivation_steps(name,_dir)
-        deactivation_steps = _map.get(name, default_steps)
-        for fxn in deactivation_steps:
-            fxn()
-        self._current_project = None
+        step_guesser = getattr(self, '_guess_{0}_steps'.format(op_name))
+        default = step_guesser(name, _dir)
+        op_steps = getattr(self,'{0}_map'.format(op_name)).get(name, default)
+        results = [fxn() for fxn in op_steps]
+        return results
 
     def activate_project(self, name):
         self.deactivate()
         self._current_project = name
-        self.report("activating: "+name)
-        self._require_project(name)
-        _dir = self.project_map[name]
-        activation_steps = self.activation_map.get(
-            name,
-            self._guess_activation_steps(name,_dir))
-        for fxn in activation_steps:
-            fxn()
+        self.perform_operation(name, 'activation')
         if not os.getcwd() == self.project_map[name]:
             self.jump_project(name)
+    activate = activate_project
 
     def guess_project_type(self, project_name):
         pdir = self.project_map[project_name]
         return guess_dir_type(pdir)
 
-    def _check_python(self, pdir):
-        """ """
-        from smashlib.util.linter import PyLinter
-        cmd_exec = self.smash.system
-        linter = PyLinter(cmd_exec=self.smash.system,)
-        linter(pdir)
+    def check(self, pname):
+        return self.perform_operation(pname, 'check')
 
     def init_pmi(self, pmi):
         ProjectManagerInterface._project_manager = self
@@ -281,18 +289,4 @@ class ProjectManagerInterface(object):
     def _check(self):
         pm = self._project_manager
         project_name = pm._current_project
-        if project_name is None:
-            pm.report("No project has been selected.")
-            return
-        project_types = self._type
-        check_steps = []
-        for ptype in project_types:
-            check_fxn = getattr(pm, '_check_' + ptype, None)
-            if check_fxn is not None:
-                check_steps.append(check_fxn)
-        if not check_steps:
-            msg = "no checkers found for project-type: "+str(project_types)
-            pm.report(msg)
-        else:
-            checks = [ fxn(pm.project_map[project_name]) \
-                       for  fxn in check_steps ]
+        pm.check(project_name)
