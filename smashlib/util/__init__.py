@@ -4,17 +4,18 @@
     Safe, simple packages only (no ipython imports in here)
     Stick to stdlib, or known-safe sections of smashlib
 """
-import re
-
+import os, re
 from smashlib.python import get_env, opd, ops, opj, ope, expanduser
 
 from smashlib.util.reflect import from_dotpath
 
-def load_user_config(env):
-    from smashlib.data import user_config
-    sandbox = env.copy();
-    sandbox.update(__file__=user_config)
-    execfile(user_config, sandbox)
+
+def require_ipy(require_version):
+    import IPython
+    ipy_version = IPython.__version__
+    if not ipy_version.startswith(require_version):
+        err = "smash requires ipython {0}, but your version is {1}"
+        raise SystemExit(err.format(require_version, ipy_version))
 
 def get_smash():
     ip = get_ipython()

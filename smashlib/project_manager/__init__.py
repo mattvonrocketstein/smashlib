@@ -12,7 +12,7 @@ from smashlib.util import guess_dir_type
 from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
 from smashlib.v2 import Reporter
-from .activate import Activation, NullActivation, activate_python
+from .activate import Activation, NullActivation, activate_python_venv
 from .deactivate import Deactivation, NullDeactivation, deactivate_python_venv
 
 ACTIVATE = dict(

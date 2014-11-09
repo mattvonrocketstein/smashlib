@@ -88,8 +88,9 @@ class Smash(Reporter):
         if not raw_finished_input.strip():
             return
         rehash_if = [
-            'python setup.py develop',
-            'python setup.py install',
+            'setup.py develop',
+            'pip install',
+            'setup.py install',
             'apt-get install']
         for x in rehash_if:
             if x in raw_finished_input:

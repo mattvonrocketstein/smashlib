@@ -2,38 +2,19 @@
 #
 
 import os, sys
-import shutil
-import IPython
+from smashlib.util import require_ipy
+from smashlib.python import ope
 
-ipy_version = IPython.__version__
-require_version = '3.0'
-
-if not ipy_version.startswith(require_version):
-    err = "smash requires ipython {0}, but your version is {1}"
-    raise SystemExit(err.format(require_version, ipy_version))
-
-expanduser = os.path.expanduser
-main_profile_name = 'SmaSh'
-smash_dir = expanduser('~/.smash')
-smashlib_dir = os.path.dirname(os.path.dirname(__file__))
-canonical_prof = os.path.join(smashlib_dir, 'ipython_config.py')
-canonical_user_prof = os.path.join(smashlib_dir, 'user_config.py')
+REQUIRE_VERSION = '3.0'
+require_ipy(REQUIRE_VERSION)
 
 def main():
     from smashlib import embed
-    from IPython.core.profiledir import ProfileDir
-    if not os.path.exists(smash_dir):
-        os.mkdir(smash_dir)
-    ProfileDir.create_profile_dir_by_name(smash_dir, main_profile_name)
-    profile_dir = os.path.join(smash_dir, 'profile_'+main_profile_name)
-    config_file = os.path.join(profile_dir, 'ipython_config.py')
-    shutil.copy(canonical_prof, config_file,)
-    from smashlib.data import user_config
-    if not os.path.exists(user_config):
-        shutil.copy(canonical_user_prof, user_config)
-    embed(["--profile-dir=~/.smash/profile_SmaSh",
-           #'--config=~/.smash/config.py'
-           ])
+    from smashlib.util.ipy import SmashConfig, SmashUserConfig
+    smash_prof = SmashConfig.ensure()
+    user_conf = SmashUserConfig.ensure()
+    embed(["--profile-dir={0}".format(smash_prof),])
+
 entry = main
 
 if __name__=='__main__':

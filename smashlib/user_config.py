@@ -10,8 +10,6 @@
 # cannot be edited, you can make any overrides you would like to make there
 # in here instead.
 #
-print '..loading SmaSh user-config from:', __file__
-
 c = get_config()
 
 # add custom directory hooks here

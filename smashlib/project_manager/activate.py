@@ -5,15 +5,18 @@ from .operation import OperationStep, NullOperationStep
 from smashlib.util.venv import contains_venv
 from smashlib.util import truncate_fpath
 
+
 class Activation(OperationStep):
     pass
+
 
 class NullActivation(NullOperationStep):
     pass
 
 
 
-def activate_python(project_manager):
+def activate_python_venv(project_manager):
+    """ if any venv's are found, activate the first """
     name = project_manager._current_project
     _dir = project_manager.project_map[name]
     found_venv = None

@@ -13,6 +13,7 @@ class Linter(Reporter):
         if cmd_exec==None:
             cmd_exec=os.system
         self.cmd_exec = cmd_exec
+        self.init_logger()
 
     def __call__(self):
         raise Exception("abstract")

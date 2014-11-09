@@ -1,12 +1,15 @@
-[about](#about) | [quickstart](#quickstart) | [installation](#installation) |
-[features](#features) | [usage](#usage) | [testing](#testing) |
+[quickstart](#quickstart) | [installation](#installation) | [testing](#testing) |
+
+-------------------------------------------------------------------------------
+
+features: [overview](#overview) | [project manager](#pm)
 
 **Under Construction: porting to IPython==3.0.0-dev**
 
 <a name="about"/>
 ABOUT
 =====
-SmaSh is the smart-shell.  It offers features for project management, a flexible plugin architecture that is easy to use, and simple JSON configuration files that try to be as sane as possible.  Python developers might be particularly interested because it also happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It builds on, and offers very sophisticated support for python virtual environments.
+SmaSh is the smart-shell.  It offers features for project management, a flexible plugin architecture that is easy to use, and simple JSON configuration files that try to be as sane as possible.  Python developers will be particularly interested because it also happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It builds on, and offers very sophisticated support for python virtual environments.
 
 
 <a name="quickstart"/>
@@ -37,9 +40,10 @@ There are two parts to SmaSh: smashlib and the smash shell.  The instructions in
 ```
 
 
-<a name="features"/>
-FEATURES
+<a name="overview"/>
+Overview
 =========
+
 ####Shell & Python Support
 SmaSh functions seamlessly as a normal system shell, but it also a full fledged python interpretter.  It does shell stuff in the shell places, and python stuff in the python places.  If you're a bash user or an ipython user, your existing configuration efforts can be [inherited automatically](#TODO-config-inheritance).
 
@@ -51,12 +55,14 @@ Depending on the context, tab completion information is derived either from ipyt
 3. if you want to write a new completer you have options: ipython way or the bash way
 
 ####Python Virtualenv Support
-SmaSh has sophisticated virtualenv support which is very useful, especially if you're working on multiple projects or working with multiple major versions of the same software.  Activating/deactivating venvs is done with `venv_activate some_dir` and `venv_deactivate`, respectively.  This not only updates your $PATH, but updates the python runtime.  Modules from the new environment can now be imported directly, and side-effects from the old virtualenv are purged.
+SmaSh has sophisticated virtualenv support which useful particularly if you're working on multiple projects or working with multiple major versions of the same software.  Activating/deactivating venvs is done with `venv_activate some_dir` and `venv_deactivate`, respectively.  This not only updates your $PATH, but updates the python runtime.  Modules from the new environment can now be imported directly, and side-effects from the old virtualenv are purged.
 
 ####Prompts
 By default smash ships with the wonderfully dynamic [liquidprompt tool](#https://github.com/nojhan/liquidprompt).  Liquidprompt has it's own rich options for configuration and it's recommended that you [configure it in the normal way](https://github.com/nojhan/liquidprompt#features-configuration), but, some of these options can be overridden from `~/.smash/config.py`.  The default liquidprompt configuration features a prompt that shows activated virtual environments, as well as VCS branch and commit-or-stash-status.  Other options include everything from cpu/battery status to write-permissions for the current directory.
 
-####Project Manager
+<a name="pm"/>
+Project Manager
+===============
 Projects are natural abstractions for lots of kinds of work, and will be particularly familiar to anyone who has used an IDE.  In SmaSh, projects are defined by a nickname and associated with a directory.  Project can function as bookmarks that can be jumped to, and a project can have it's own set of command aliases and macros which other projects do not share.  Projects also have *types*, which can either be specified or autodetected based on the contents of the project directory.
 
 **Project Types** are simply lists of strings, such as ["python"], or ["python", "docs"].  The type of a project may be provided by the user or autodetected by smash.  New user-defined types are encouraged, but they won't have default operations (see below).
@@ -110,11 +116,6 @@ In the sections below, you will find instructions on how to invoke operations an
     * run flake8 but ignore any venvs
 
 -------------------------------------------------------------------------------
-
-
-<a name="usage"/>
-USAGE
-=====
 
 <a name="testing"/>
 TESTING

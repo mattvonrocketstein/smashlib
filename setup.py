@@ -26,6 +26,7 @@ setup(
     packages     = ['smashlib'],#find_packages('.'),
     entry_points = \
     { 'console_scripts': \
-      ['run_smash = smashlib.bin.smash:entry', ]
+      [ 'run_smash = smashlib.bin.smash:entry',
+        'pybcompgen = smashlib.bin.pybcompgen:main', ]
     }
 )

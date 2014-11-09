@@ -67,8 +67,8 @@ app.exec_lines.append("""smsh=ip._smash""")
 
 # load smash user config.  this must happen last
 ################################################################################
-from smashlib.util import load_user_config
-load_user_config(globals())
+from smashlib.util.ipy import SmashUserConfig
+SmashUserConfig.load(globals())
 
 
 # Create a massive crash report when IPython encounters what may be an internal
