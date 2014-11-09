@@ -1,28 +1,35 @@
 """ smashlib.project_manager
 """
 import os
-
+import inspect
 from IPython.utils.traitlets import EventfulDict, EventfulList
 
 from smashlib.ipy_cd_hooks import CD_EVENT
 from smashlib.project_manager.util import (
     clean_project_name, UnknownProjectError)
 from smashlib.python import abspath, expanduser
-from smashlib.util import guess_dir_type, truncate_fpath
+from smashlib.util import guess_dir_type
 from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
-from smashlib.util.venv import contains_venv
 from smashlib.v2 import Reporter
+from .activate import Activation, NullActivation, activate_python
+from .deactivate import Deactivation, NullDeactivation, deactivate_python_venv
 
+ACTIVATE = dict(
+    python=[activate_python])
+DEACTIVATE = dict(
+    python=[deactivate_python_venv])
 
 class ProjectManager(Reporter):
     search_dirs    = EventfulList(default_value=[], config=True)
     project_map    = EventfulDict(default_value={}, config=True)
     alias_map      = EventfulDict(default_value={}, config=True)
     activation_map = EventfulDict(default_value={}, config=True)
+    deactivation_map = EventfulDict(default_value={}, config=True)
     venv_map       = EventfulDict(default_value={}, config=True)
 
     _current_project = None
+
     @property
     def _project_name(self):
         return self._current_project
@@ -93,7 +100,6 @@ class ProjectManager(Reporter):
                 len(bind_list), base_dir))
         self.update_interface()
 
-
     def update_interface(self):
         """ so that tab-completion works on any bound projects, the
             properties on ProjectManagerInterface (aka user_ns['proj'])
@@ -135,35 +141,39 @@ class ProjectManager(Reporter):
                 self.warning(msg)
         return args, unknown
 
+    def _guess_deactivation_steps(self, name, dir):
+        operation_dict = DEACTIVATE
+        return self._guess_operation_steps(
+            name, dir, operation_dict,
+            Deactivation, NullDeactivation)
+
     def _guess_activation_steps(self, name, dir):
-        found_venv = None
-        default_venv_dir = self.venv_map.get(name, None)
-        if default_venv_dir:
-            default_venv = contains_venv(
-                default_venv_dir,
-                report=self.report)
-            if not default_venv:
-                msg = ("ProjectManager.venv_map uses {0}, "
-                       "but no venv was found")
-                msg = msg.format(default_venv_dir)
-                self.warning(msg)
-            else:
-                found_venv = default_venv
-                self.report("venv_map specifies to use {0}".format(
-                    truncate_fpath(found_venv)))
-        else:
-            found_venv = contains_venv(dir, report=self.report)
+        operation_dict = ACTIVATE
+        return self._guess_operation_steps(
+            name, dir, operation_dict,
+            Activation, NullActivation)
 
-        if found_venv:
-            self.shell.magic('venv_activate {0}'.format(found_venv))
-            return True
-        else:
-            msg = "no activation steps are understood for {0}".format(name)
-            self.report(msg)
-        self._current_project = name
+    def _guess_operation_steps(
+        self, name, dir, operation_dict,
+        step_kls, default_step):
+        assert inspect.isclass(step_kls) and inspect.isclass(default_step)
+        steps = []
+        ptype = self.guess_project_type(name)
 
-    def _guess_deactivation_steps(self, name, _dir):
-        self.shell.magic('venv_deactivate')
+        for subtype in ptype:
+            these_steps = operation_dict.get(subtype, [])
+            steps += [
+                step_kls(
+                    subtype, pm=self,
+                    fxn=fxn, args=(self,)) \
+                for fxn in these_steps]
+        if not steps:
+            steps.append(default_step(pm=self))
+        return steps
+
+
+    #def _guess_deactivation_steps(self, name, _dir):
+    #    return [lambda: self.shell.magic('venv_deactivate')]
 
     def deactivate(self):
         name = self._current_project
@@ -171,31 +181,33 @@ class ProjectManager(Reporter):
             return
         self._require_project(name)
         _dir = self.project_map[name]
-        self.report("deactivating: "+name)
-        deactivation_steps = [] #self.deactivation_map.get(name, [])
-        if not deactivation_steps:
-            activation_steps = self._guess_deactivation_steps(name, _dir)
+        _map = self.deactivation_map
+        self.report("deactivating: " + name)
+        default_steps = self._guess_deactivation_steps(name,_dir)
+        deactivation_steps = _map.get(name, default_steps)
+        for fxn in deactivation_steps:
+            fxn()
         self._current_project = None
 
     def activate_project(self, name):
         self.deactivate()
+        self._current_project = name
         self.report("activating: "+name)
         self._require_project(name)
         _dir = self.project_map[name]
         activation_steps = self.activation_map.get(
-            name, [])
-        if not activation_steps:
-            activation_steps = self._guess_activation_steps(name, _dir)
-
-        if not os.getcwd()==self.project_map[name]:
+            name,
+            self._guess_activation_steps(name,_dir))
+        for fxn in activation_steps:
+            fxn()
+        if not os.getcwd() == self.project_map[name]:
             self.jump_project(name)
-        self._current_project = name
 
     def guess_project_type(self, project_name):
         pdir = self.project_map[project_name]
         return guess_dir_type(pdir)
 
-    def _lint_python(self, pdir):
+    def _check_python(self, pdir):
         """ """
         from smashlib.util.linter import PyLinter
         cmd_exec = self.smash.system
@@ -240,8 +252,8 @@ class ProjectManagerInterface(object):
         if ope(gitignore):
             with open(gitignore) as fhandle:
                 patterns += [x.strip() for x in fhandle.readlines()]
-
-        patterns=' -and '.join(['! -wholename "{0}"'.format(p) for p in patterns])
+        patterns = ' -and '.join( ['! -wholename "{0}"'.format(p) \
+                                   for p in patterns ] )
         if patterns:
             patterns = '\\( {0} \\)'.format(patterns)
         # find . -type f \( -iname "*.c" -or -iname "*.asm" \)
@@ -254,7 +266,6 @@ class ProjectManagerInterface(object):
         filenames.reverse()
         return filenames[:10]
 
-    # TODO sandwiches like every single day
     def _ack(self, pat):
         """ TODO: should really be some kind of magic """
         venvs = self._venvs
@@ -267,20 +278,21 @@ class ProjectManagerInterface(object):
         self._project_managersmash.system(cmd)
 
     @property
-    def _lint(self):
+    def _check(self):
         pm = self._project_manager
         project_name = pm._current_project
         if project_name is None:
             pm.report("No project has been selected.")
             return
-
         project_types = self._type
-        lint_fxns = [ getattr(pm,'_lint_' + ptype, None) \
-                      for ptype in project_types ]
-        lint_fxns = filter(None,lint_fxns)
-        if not lint_fxns:
-            msg = "no linters found for project-type: "+str(project_types)
+        check_steps = []
+        for ptype in project_types:
+            check_fxn = getattr(pm, '_check_' + ptype, None)
+            if check_fxn is not None:
+                check_steps.append(check_fxn)
+        if not check_steps:
+            msg = "no checkers found for project-type: "+str(project_types)
             pm.report(msg)
         else:
-            out = [ lint_fxn(pm.project_map[project_name]) \
-                    for  lint_fxn in lint_fxns ]
+            checks = [ fxn(pm.project_map[project_name]) \
+                       for  fxn in check_steps ]
