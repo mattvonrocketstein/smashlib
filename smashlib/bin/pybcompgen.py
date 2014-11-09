@@ -30,11 +30,23 @@
        ["ubuntu-artwork "]
 """
 import sys
+import json
 import unicodedata
 from subprocess import Popen, PIPE
 
+import re
+
+# possibly this should be all vt100 codes, idk
+# http://ascii-table.com/ansi-escape-sequences-vt-100.php
+# http://stackoverflow.com/questions/7857352/python-regex-to-match-vt100-escape-sequences
+ansi_escape = re.compile(r'\x1b\[C')
+
 def remove_control_characters(s):
+    s = unicode(s)
+    s = ansi_escape.sub('', s)
+    s = s.replace('[1@#','')
     return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
+
 
 def complete(to_complete):
     """ wow! so this is stupid, but what can you do? to understand
@@ -107,9 +119,10 @@ def complete(to_complete):
         #   results in tons of control-characters being dumped onto
         #   the line, and we have to clean those up for the output
         the_line = lines[first_marker+1:last_marker][0]
-        the_line = remove_control_characters(unicode(the_line))
-        tmp = the_line[the_line.find(to_complete)+len(to_complete):-4]
+        the_line = remove_control_characters(the_line)
+        tmp = the_line[the_line.find(to_complete)+len(to_complete):]
         result = to_complete.split()[-1]+tmp
+
         if '#' in result:
             # this seems to only happen for directories.  not sure why
             result = result[:result.find('#')]
@@ -123,9 +136,12 @@ def complete(to_complete):
         completion_choices = reduce(lambda x,y:x+y, completion_choices_by_row)
         return completion_choices
 
-if __name__=='__main__':
+def main():
     # if being called from the command line, output json
     # so it is easier for another application to consume
-    import json
-    result = complete(sys.argv[-1])
+    txt = sys.argv[-1]
+    result = complete(txt)
     print json.dumps(result)
+
+if __name__=='__main__':
+    main()
