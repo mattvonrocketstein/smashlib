@@ -5,8 +5,7 @@ from IPython.config.configurable import Configurable
 from IPython.utils.coloransi import TermColors
 from IPython.utils.traitlets import Bool
 from IPython.utils.traitlets import EventfulList, EventfulDict
-
-
+from smashlib.logging import Logger
 
 class SmashComponent(object):
     def build_argparser(self):
@@ -77,43 +76,6 @@ class EventfulMix(object):
         for name, elist in elists.items():
             self._init_elist(name, elist)
 
-class Logger(object):
-    def __init__(self, component):
-        self.component = component
-
-    @property
-    def verbose(self):
-        return self.component.verbose
-    @property
-    def ignore_warnings(self):
-        return False
-    @property
-    def ignore_info(self):
-        return False
-
-    def report(self, msg, *args, **kargs):
-        force = kargs.pop('force', False)
-        if self.verbose or force:
-            header = kargs.pop('header','')
-            header = self.component.__class__.__name__ + ':' + header
-            header = TermColors.Blue + header
-            content = TermColors.Red + msg
-            print "{0}: {1} {2}".format(
-                header, content, TermColors.Normal)
-            if args:
-                print '  ',args
-
-    def warning(self,*args, **kargs):
-        if not self.ignore_warnings:
-            kargs['force'] = True
-            kargs['header'] = 'warning'
-            self.report(*args, **kargs)
-
-    def info(self, *args, **kargs):
-        if not self.ignore_info:
-            kargs['force'] = True
-            #kargs['header'] = ''
-            self.report(*args, **kargs)
 
 class Base(SmashComponent, EventfulMix, Configurable, ):
 
@@ -141,13 +103,16 @@ class Base(SmashComponent, EventfulMix, Configurable, ):
         pass
 
     def init_bus(self):
+        """ register any instance methods that
+            have used the receives_event decorator
+        """
         for x in dir(self):
             # look through the class to avoid
             # triggering properties on the instance
             obj = getattr(self.__class__, x, None)
             channel = getattr(obj, '_subscribe_to', None)
             if channel:
-                #since we looked through the class earlier,
+                # since we looked through the class earlier,
                 # we need to actually retrieve the method now
                 y = getattr(self, x)
                 self.smash.bus.subscribe(channel, y)

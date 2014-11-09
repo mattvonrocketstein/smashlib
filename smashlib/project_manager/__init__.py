@@ -5,16 +5,15 @@ import os
 from IPython.utils.traitlets import EventfulDict, EventfulList
 
 from smashlib.ipy_cd_hooks import CD_EVENT
-
-from smashlib.v2 import Reporter
-from smashlib.util import guess_dir_type
-from smashlib.util.events import receives_event
-from smashlib.util import truncate_fpath
-from smashlib.python import abspath, expanduser
-from smashlib.util.venv import contains_venv
 from smashlib.project_manager.util import (
     clean_project_name, UnknownProjectError)
+from smashlib.python import abspath, expanduser
+from smashlib.util import guess_dir_type, truncate_fpath
+from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
+from smashlib.util.venv import contains_venv
+from smashlib.v2 import Reporter
+
 
 class ProjectManager(Reporter):
     search_dirs    = EventfulList(default_value=[], config=True)
@@ -24,6 +23,13 @@ class ProjectManager(Reporter):
     venv_map       = EventfulDict(default_value={}, config=True)
 
     _current_project = None
+    @property
+    def _project_name(self):
+        return self._current_project
+
+    @property
+    def _project_dir(self):
+        return self.project_map[self._project_name]
 
     @property
     def reverse_project_map(self):
@@ -133,8 +139,9 @@ class ProjectManager(Reporter):
         found_venv = None
         default_venv_dir = self.venv_map.get(name, None)
         if default_venv_dir:
-            default_venv = contains_venv(default_venv_dir,
-                                         report=self.report)
+            default_venv = contains_venv(
+                default_venv_dir,
+                report=self.report)
             if not default_venv:
                 msg = ("ProjectManager.venv_map uses {0}, "
                        "but no venv was found")
@@ -218,7 +225,36 @@ class ProjectManagerInterface(object):
         return find_venvs(
             self._project_managerproject_map[self._project_manager_current_project])
 
+    @property
+    def _recent(self):
+        """ return a list of the top 10 most recently changed files in the
+            current project's directory, where list[0] was changed most
+            recently.  this automatically takes into account ignoring dotfiles
+            and .gitignore contents.
+        """
+        gitignore = os.path.join(
+            self._project_manager._project_dir,
+            '.gitignore')
+        from smashlib.python import ope
+        patterns = ['*/.*/*']
+        if ope(gitignore):
+            with open(gitignore) as fhandle:
+                patterns += [x.strip() for x in fhandle.readlines()]
 
+        patterns=' -and '.join(['! -wholename "{0}"'.format(p) for p in patterns])
+        if patterns:
+            patterns = '\\( {0} \\)'.format(patterns)
+        # find . -type f \( -iname "*.c" -or -iname "*.asm" \)
+        sed = """| sed 's/[^[:space:]]\+ //';"""
+        base_find = 'find {0} -type f {1}'.format(
+            self._project_manager._project_dir, patterns)
+        cmd = '{0} -printf "%T+ %p\n" | sort -n {1}'.format(base_find, sed)
+        filenames = self._project_manager.smash.system(cmd, quiet=True)
+        filenames = filenames.split('\n')
+        filenames.reverse()
+        return filenames[:10]
+
+    # TODO sandwiches like every single day
     def _ack(self, pat):
         """ TODO: should really be some kind of magic """
         venvs = self._venvs
@@ -239,7 +275,7 @@ class ProjectManagerInterface(object):
             return
 
         project_types = self._type
-        lint_fxns = [ getattr(pm,'_lint_'+ptype, None) \
+        lint_fxns = [ getattr(pm,'_lint_' + ptype, None) \
                       for ptype in project_types ]
         lint_fxns = filter(None,lint_fxns)
         if not lint_fxns:

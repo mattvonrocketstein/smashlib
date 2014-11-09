@@ -39,7 +39,6 @@ class Smash(Reporter):
                 msg = '{0}.load_ipython_extension should return an object'
                 msg = msg.format(dotpath)
                 self.warning(msg)
-            #self.shell.magic('load_ext {0}'.format(extension))
         self.loaded_extensions = record
         self.report("loaded extensions:", self.loaded_extensions.keys())
 
