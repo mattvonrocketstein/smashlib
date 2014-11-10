@@ -3,11 +3,12 @@
 import os
 
 from collections import defaultdict
-from smashlib.util._fabric import require_bin
-from smashlib.util.venv import find_venvs
-from smashlib.v2 import Reporter
 from IPython.config.configurable import Configurable
 from IPython.utils.traitlets import Bool
+
+from goulash.venv import find_venvs
+from smashlib.util._fabric import require_bin
+from smashlib.v2 import Reporter
 from smashlib.util import get_smash
 
 class Linter(Reporter):

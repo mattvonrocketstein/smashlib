@@ -1,9 +1,10 @@
 """ smashlib.project_manager.activate
 """
 
+from goulash.venv import contains_venv
+from goulash.util import summarize_fpath
+
 from .operation import OperationStep, NullOperationStep
-from smashlib.util.venv import contains_venv
-from smashlib.util import truncate_fpath
 
 
 class Activation(OperationStep):
@@ -12,7 +13,6 @@ class Activation(OperationStep):
 
 class NullActivation(NullOperationStep):
     pass
-
 
 
 def activate_python_venv(project_manager):
@@ -33,7 +33,7 @@ def activate_python_venv(project_manager):
         else:
             found_venv = default_venv
             project_manager.report("venv_map specifies to use {0}".format(
-                truncate_fpath(found_venv)))
+                summarize_fpath(found_venv)))
     else:
         found_venv = contains_venv(_dir, report=project_manager.report)
 

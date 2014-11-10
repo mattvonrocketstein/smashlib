@@ -5,10 +5,12 @@
     Stick to stdlib, or known-safe sections of smashlib
 """
 import os, re
+from goulash.util import summarize_fpath
 from smashlib.python import get_env, opd, ops, opj, ope, expanduser
-
 from smashlib.util.reflect import from_dotpath
 
+def home():
+    return get_env('HOME')
 
 def require_ipy(require_version):
     import IPython
@@ -24,11 +26,6 @@ def get_smash():
     except AttributeError:
         raise Exception("load smash first")
 
-def home():
-    return get_env('HOME')
-
-def truncate_fpath(fpath):
-    return fpath.replace(home(), '~')
 
 import glob, os
 def guess_dir_type(_dir, max_depth=3):

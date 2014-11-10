@@ -4,6 +4,8 @@ import os
 import inspect
 from IPython.utils.traitlets import EventfulDict, EventfulList
 
+from goulash.venv import find_venvs
+
 from smashlib.ipy_cd_hooks import CD_EVENT
 from smashlib.project_manager.util import (
     clean_project_name, UnknownProjectError)
@@ -12,6 +14,7 @@ from smashlib.util import guess_dir_type
 from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
 from smashlib.v2 import Reporter
+
 from .activate import Activation, NullActivation
 from .check import Check, NullCheck, python_flakes
 from .activate import activate_vagrant, activate_python_venv
@@ -241,7 +244,6 @@ class ProjectManagerInterface(object):
 
     @property
     def _venvs(self):
-        from smashlib.util.venv import find_venvs
         return find_venvs(
             self._project_managerproject_map[self._project_manager_current_project])
 

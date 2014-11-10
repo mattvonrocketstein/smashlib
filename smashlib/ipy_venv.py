@@ -10,13 +10,16 @@ import os, sys, glob
 from IPython.utils.traitlets import Bool
 from IPython.core.magic import Magics, magics_class, line_magic
 
+from goulash.util import summarize_fpath
 from smashlib.data import SMASH_DIR
 from smashlib.v2 import Reporter
-from smashlib.util import truncate_fpath
+
 from smashlib.python import opj, ope, abspath, expanduser
 from smashlib.util.events import receives_event
-from smashlib.util.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
 from smashlib.util import get_smash
+
+from goulash.venv import get_venv, is_venv, to_vbin, to_vlib, get_path
+
 # channel names for use with the smash bus
 C_POST_ACTIVATE = 'post_activate_venv'
 C_PRE_ACTIVATE = 'pre_activate_venv'
@@ -48,6 +51,8 @@ class VirtualEnvSupport(Reporter):
             self.warning("no venv to deactivate")
             return False
         else:
+            if not venv:
+                return False
             self.report("venv_deactivate: "+venv)
             self.publish(C_PRE_DEACTIVATE, venv)
 
@@ -64,7 +69,7 @@ class VirtualEnvSupport(Reporter):
             vbin = to_vbin(venv)
             if vbin in path:
                 msg = 'removing old venv bin from PATH: ' + \
-                      truncate_fpath(str(vbin))
+                      summarize_fpath(str(vbin))
                 self.report(msg)
                 path.remove(vbin)
                 os.environ['PATH'] = ':'.join(path)
@@ -77,25 +82,15 @@ class VirtualEnvSupport(Reporter):
                 if entry and not entry.startswith(venv):
                     new_path.append(entry)
                 elif entry:
-                    self.report(" del: "+truncate_fpath(entry))
-                    #self.warning("ignoring special-case?")
-                    #if entry.startswith(smashlib._meta['smash_home']) and \
-                    #   'IPython' in entry:
-                        # careful, dont remove our own bootstraps.
-                        # specifically this will break --project=..
-                        # invocation
-                    #    new_path.append(entry)
-                    #else:
-                        #print 'cleaning: ',entry
-                    #    pass
+                    self.report(" del: "+summarize_fpath(entry))
             sys.path = new_path
 
-            self._clean_user_namespace()
+            self._clean_user_namespace(venv)
             # TODO: clean sys.modules?
             self.publish(C_POST_DEACTIVATE, venv)
             return True
 
-    def _clean_user_namespace(self):
+    def _clean_user_namespace(self, venv):
             """ clean ipython username to remove old project's code
                 TODO: document and refactor
             """

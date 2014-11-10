@@ -1,9 +1,9 @@
 """ smashlib.project_manager.check
 """
+from goulash.venv import contains_venv
+from goulash.util import summarize_fpath
 
 from .operation import OperationStep, NullOperationStep
-from smashlib.util.venv import contains_venv
-from smashlib.util import truncate_fpath
 
 
 class Check(OperationStep):
@@ -12,7 +12,6 @@ class Check(OperationStep):
 
 class NullCheck(NullOperationStep):
     operation_name = 'check'
-
 
 
 def python_flakes(project_manager):

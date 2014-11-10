@@ -22,8 +22,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Operating System :: OS Independent', ],
-    package_dir  = {'': '.'},
-    packages     = ['smashlib'],#find_packages('.'),
+    packages     = ['smashlib'],
     entry_points = \
     { 'console_scripts': \
       [ 'run_smash = smashlib.bin.smash:entry',
