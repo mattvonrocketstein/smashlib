@@ -7,7 +7,7 @@ from smashlib.v2 import Reporter
 
 class OperationStep(Reporter):
     """ thin wrapper, basically a named lambda. """
-    verbose = True
+    #verbose = True
     def __init__(self, name, fxn=None, pm=None, args=tuple(), ):
         self.project_manager = pm
         self.name = self.project_manager._current_project

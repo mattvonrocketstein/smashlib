@@ -16,6 +16,20 @@ c = get_config()
 c.ChangeDirHooks.change_dir_hooks.append(
     "smashlib.ipy_cd_hooks.ChangeDirHooks.test_change_message")
 
+c.Smash.ignore_warnings = True
+
+# every smash component gets it's own verbosity setting.
+# this mostly controls the printing of debugging info
+c.Smash.verbose = False
+c.Smash.verbose_events = False
+c.LiquidPrompt.verbose = False
+c.ProjectManager.verbose = False
+c.ChangeDirHooks.verbose = False
+c.VirtualEnvSupport.verbose = False
+c.PyLinter.verbose = True
+c.PyLinter.ignore_pep8 = True
+
+
 # everything below this line should not ultimately be in this file..
 #
 c.TerminalInteractiveShell.editor = 'emacsclient -n'

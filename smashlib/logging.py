@@ -12,7 +12,7 @@ class Logger(object):
 
     @property
     def ignore_warnings(self):
-        return False
+        return self.component.smash.ignore_warnings
 
     @property
     def ignore_info(self):

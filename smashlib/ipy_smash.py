@@ -29,6 +29,7 @@ class SmashMagics(Magics):
 class Smash(Reporter):
     extensions = List(default_value=[], config=True)
     verbose_events = Bool(False, config=True)
+    ignore_warnings = Bool(False, config=True)
     load_bash_aliases = Bool(False, config=True)
 
     def system(self, cmd, quiet=False):
@@ -36,6 +37,9 @@ class Smash(Reporter):
         if not quiet:
             self.report("run: "+cmd)
         return qlocal(cmd, capture=True)
+
+    def init_magics(self):
+        self.shell.register_magics(SmashMagics)
 
     def init_extensions(self):
         record = {}
