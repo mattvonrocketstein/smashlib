@@ -5,13 +5,22 @@
 import os
 from setuptools import setup as _setup
 from setuptools.command.install import install
+
 try:
     import goulash
 except ImportError:
     err = ('Smash-shell installer requires goulash.  '
            '"pip install goulash==0.2" and try again')
     raise SystemExit(err)
+try:
+    import fabric
+except ImportError:
+    err = ('Smash-shell installer requires fabric.  '
+           '"pip install goulash==1.10.0" and try again')
+    raise SystemExit(err)
 
+from fabric.colors import red
+from fabric import api as fab_api
 from goulash.venv import is_venv, to_vbin
 
 DOT_SMASH = os.path.abspath(os.path.expanduser('~/.smash'))
@@ -25,29 +34,6 @@ SMASH_REQS = os.path.abspath(os.path.join(
 
 class InstallCommand(install):
 
-    def _fabric(self, sub=None):
-        try:
-            import fabric
-        except ImportError:
-            err = ('Smash-shell installer requires fabric.  '
-                   '"pip install fabric==1.10.0" and try again')
-            raise SystemExit(err)
-        else:
-            if sub is None:
-                return fabric
-            else:
-                from smashlib.util import from_dotpath
-                return from_dotpath('fabric.'+sub)
-
-    @property
-    def fabric(self):
-        return self._fabric()
-
-    @property
-    def fab_api(self):
-        return self._fabric('api')
-
-
     def build_smash_venv(self):
         if is_venv(DOT_SMASH):
             self.report("{0} is already a venv.  leaving it alone".format(
@@ -58,8 +44,8 @@ class InstallCommand(install):
 
     def venv_ipython(self):
         venv_ipython = os.path.join(DOT_SMASH, 'bin', 'ipython')
-        with self.fab_api.quiet():
-            result =  self.fab_api.local(
+        with fab_api.quiet():
+            result =  fab_api.local(
                 '{0} --version'.format(venv_ipython),
                 capture=True)
         return result
@@ -88,7 +74,7 @@ class InstallCommand(install):
                 cmd = "cd {0} && {1} setup.py install"
             elif self.__class__==DevelopCommand:
                 cmd = "cd {0} && {1} setup.py develop"
-            self.fab_api.local(cmd.format(
+            fab_api.local(cmd.format(
                 os.path.join(DOT_SMASH,'ipython'),
                 os.path.join(DOT_SMASH, 'bin','python')))
 
@@ -99,11 +85,11 @@ class InstallCommand(install):
         self.report("clone url: "+url)
         ipy_clone_path = os.path.join(DOT_SMASH, 'ipython')
         if not os.path.exists(ipy_clone_path):
-            with self.fab_api.settings(warn_only=True):
+            with fab_api.settings(warn_only=True):
                 cmd = ('cd {0} && '
                        'git clone --branch master '
                        '--single-branch --depth 1 {1}')
-                result = self.fab_api.local(
+                result = fab_api.local(
                     cmd.format(DOT_SMASH, url),
                     capture=True)
             if not result.succeeded:
@@ -116,11 +102,11 @@ class InstallCommand(install):
             self.report('.. will not update it')
 
     def report(self,msg):
-        print self._fabric('colors').red(msg)
+        red(msg)
 
     def _require_bin(self, name, deb_pkg_name=None):
-        with self.fab_api.quiet():
-            result =  self.fab_api.local('which "{0}"'.format(name))
+        with fab_api.quiet():
+            result =  fab_api.local('which "{0}"'.format(name))
         if not result.succeeded:
             err=("Smash shell installer requires {0}.".format(name))
             self.report(err)
@@ -132,7 +118,7 @@ class InstallCommand(install):
     def add_smashlib_reqs(self):
         pip = self.smash_pip
         cmd = '{0} install -r {1}'.format(pip, SMASH_REQS)
-        self.fab_api.local(cmd)
+        fab_api.local(cmd)
         self.report("finished installing {0} to {1}".format(
             SMASH_REQS, DOT_SMASH))
 
@@ -145,7 +131,7 @@ class InstallCommand(install):
             cmd = '{0} {1} develop'.format(python, SMASH_SETUP_PY)
 
 
-        self.fab_api.local(cmd)
+        fab_api.local(cmd)
         self.report("finished install smashlib to {0}".format(
             DOT_SMASH))
         self.add_symlink()
@@ -157,7 +143,7 @@ class InstallCommand(install):
         if not os.path.exists(_ubin):
             self.report("~/bin not found, creating it")
             os.mkdir(_ubin)
-        self.fab_api.local('ln -nfs {0} {1}'.format(
+        fab_api.local('ln -nfs {0} {1}'.format(
                      smash_shell,
                      os.path.join(_ubin,'smash')))
 

@@ -20,8 +20,8 @@ QUICKSTART
   $ git clone https://github.com/mattvonrocketstein/smashlib.git ~/.smash
   $ cd ~/.smash
   $ virtualenv --no-site-packages .
-  $ ./bin/pip install fabric==1.10.0
-  $ ./bin/python/ install.py
+  $ ./bin/pip install -r install_requirements.txt
+  $ ./bin/python install.py
   $ ~/bin/smash
 ```
 
