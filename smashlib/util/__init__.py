@@ -5,7 +5,6 @@
     Stick to stdlib, or known-safe sections of smashlib
 """
 import os, re
-from goulash.util import summarize_fpath
 from smashlib.python import get_env, opd, ops, opj, ope, expanduser
 from smashlib.util.reflect import from_dotpath
 
