@@ -9,7 +9,7 @@ features: [overview](#overview) | [project manager](#pm)
 <a name="about"/>
 ABOUT
 =====
-SmaSh is the smart-shell.  It offers features for project management, a flexible plugin architecture that is easy to use, and simple JSON configuration files that try to be as sane as possible.  Python developers will be particularly interested because it also happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It builds on, and offers very sophisticated support for python virtual environments.
+SmaSh is the smart-shell.  It offers features for project management, a flexible plugin architecture that is easy to use, and simple JSON configuration files that try to be as sane as possible.  Python developers will be particularly interested because it also happens to be a python/bash hybrid which builds on the pysh profile for IPython.  It leverages all existing system tab completion setup, apart from IPython's completion in python namespaces.  It builds on, and offers very sophisticated support for python virtual environments.
 
 
 <a name="quickstart"/>
