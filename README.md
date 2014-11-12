@@ -15,6 +15,7 @@ SmaSh is the smart-shell.  It offers features for project management, a flexible
 <a name="quickstart"/>
 QUICKSTART
 ==========
+The smash installation gets it's own sandbox, does not require root, and will not interefere with existing versions of IPython.  The cost of this is that setup is a little bit nonstandard and `setup.py` should not be used directly unless you only want to install the support libraries.
 
 ```shell
   $ git clone https://github.com/mattvonrocketstein/smashlib.git ~/.smash
@@ -29,7 +30,7 @@ QUICKSTART
 INSTALLATION
 ============
 
-There are two parts to SmaSh: smashlib and the smash shell.  The instructions in the [quickstart section](#quickstart) install *both*.  Installing the shell is atypical because smash requires a development version of ipython, and smashlib will be installed to own it's own sandboxed python virtual environment.  **If you only want to develop against smashlib**, installation is more typical:
+There are two parts to SmaSh: smashlib and the smash shell.  The instructions in the [quickstart section](#quickstart) install *both*.  Installing the shell is atypical for the reasons mentioned in that section, but **if you only want to develop against smashlib**, installation is more typical:
 
 ```shell
   $ git clone https://github.com/mattvonrocketstein/smashlib.git
