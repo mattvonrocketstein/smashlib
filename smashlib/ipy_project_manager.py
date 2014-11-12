@@ -5,7 +5,6 @@
 """
 from smashlib.project_manager import (
     ProjectManager, ProjectManagerInterface)
-from smashlib.project_manager.magics import ProjectMagics
 
 
 def load_ipython_extension(ip):
@@ -15,9 +14,6 @@ def load_ipython_extension(ip):
     ProjectManager.interface = pmi
     pm = ProjectManager(ip)
     pm.init_pmi(pmi)
-
-    ProjectMagics.project_manager = pm
-    ip.register_magics(ProjectMagics)
     return pm
 
 

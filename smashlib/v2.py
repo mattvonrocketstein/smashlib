@@ -86,7 +86,11 @@ class Base(SmashComponent, EventfulMix, Configurable, ):
         self.report("initializing {0}".format(self))
         self.init_eventful()
         self.init_bus()
+        self.init_magics()
         self.init()
+
+    def init_magics(self):
+        pass
 
     def init_logger(self):
         self.logger = Logger(self)

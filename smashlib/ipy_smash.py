@@ -17,6 +17,15 @@ from smashlib.util.events import receives_event
 from smashlib.util import bash
 from smashlib import logging
 
+from IPython.core.magic import Magics, magics_class, line_magic
+
+@magics_class
+class SmashMagics(Magics):
+    @line_magic
+    def ed_config(self, parameter_s=''):
+        from smashlib.data import USER_CONFIG_PATH
+        self.shell.magic('ed {0}'.format(USER_CONFIG_PATH))
+
 class Smash(Reporter):
     extensions = List(default_value=[], config=True)
     verbose_events = Bool(False, config=True)
@@ -42,16 +51,24 @@ class Smash(Reporter):
         self.loaded_extensions = record
         self.report("loaded extensions:", self.loaded_extensions.keys())
 
+    def build_argparser(self):
+        parser = super(Smash, self).build_argparser()
+        parser.add_argument('-c','--command', default='')
+        return parser
+
     def parse_argv(self):
         """ parse arguments recognized by myself,
             then let all the extensions take a stab
             at it.
         """
-        args, unknown = super(Smash,self).parse_argv()
+        main_args, unknown = super(Smash,self).parse_argv()
         ext_objs = self.loaded_extensions.values()
         for obj in ext_objs:
             if obj:
                 args,unknown = obj.parse_argv()
+        if main_args.command:
+            self.shell.run_cell(main_args.command)
+            self.shell.run_cell('exit')
 
     @property
     def project_manager(self):
@@ -64,7 +81,8 @@ class Smash(Reporter):
         self.parse_argv()
         if self.load_bash_aliases:
             for alias, cmd in bash.get_aliases():
-                self.shell.magic("alias {0} {1}".format(alias,cmd))
+                if alias not in 'ed cd'.split(): #HACK
+                    self.shell.magic("alias {0} {1}".format(alias,cmd))
 
         smash_bin = os.path.expanduser('~/.smash/bin')
         if smash_bin not in os.environ['PATH']:

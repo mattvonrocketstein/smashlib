@@ -7,7 +7,7 @@ from smashlib.v2 import Reporter
 from smashlib.util.reflect import from_dotpath, ObjectNotFound
 
 from IPython.utils.traitlets import EventfulList
-
+from IPython.core.magics.osm import OSMagics
 CD_EVENT = 'cd'
 
 
@@ -15,7 +15,7 @@ class ChangeDirHooks(Reporter):
 
     last_dir = None
     change_dir_hooks = EventfulList(default_value=[], config=True)
-    original_cd_magic = None
+    original_cd_magic = OSMagics.cd
 
     @staticmethod
     def test_change_message(bus, new, old):
@@ -27,11 +27,12 @@ class ChangeDirHooks(Reporter):
 
     def init_patches(self):
         shell = self.shell
+        # FIXME: reregister it properly instead of patching it
         if not getattr(self, '_already_patched', False):
             def mycd(parameter_s=''):
                 #self.report('executing patched cd on {0}'.format(parameter_s))
                 try:
-                    self.original_cd_magic(parameter_s)
+                    self.original_cd_magic(parameter_s+ '-q')
                 except Exception as e:
                     self.report("error with cd.")
                     raise
@@ -41,7 +42,9 @@ class ChangeDirHooks(Reporter):
                     os.environ['PWD'] = this_dir
                     self.last_dir = this_dir
 
-            self.original_cd_magic = shell.magics_manager.magics['line']['cd']
+            #self.original_cd_magic = shell.magics_manager.magics['line']['cd']
+
+            self.original_cd_magic = OSMagics
             self.shell.magics_manager.magics['line']['cd'] = mycd
             self._already_patched = True
             self.report("finished patching cd magic")

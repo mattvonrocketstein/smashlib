@@ -15,6 +15,7 @@ from smashlib.util.events import receives_event
 from smashlib.util.ipy import green
 from smashlib.v2 import Reporter
 
+from .operation import OperationStep,NullOperationStep
 from .activate import Activation, NullActivation
 from .check import Check, NullCheck, python_flakes
 from .activate import activate_vagrant, activate_python_venv
@@ -27,6 +28,9 @@ ACTIVATE = dict(
     )
 
 CHECK = dict(
+    python=[python_flakes])
+
+TEST = dict(
     python=[python_flakes])
 
 DEACTIVATE = dict(
@@ -42,6 +46,26 @@ class ProjectManager(Reporter):
     venv_map         = EventfulDict(default_value={}, config=True)
 
     _current_project = None
+
+
+    def init(self):
+        # at this point project_map has been created from
+        # configuration data, but it's callback mechanism
+        # which does validation has not be registered yet.
+        # bind it, then reinitialize project_map to fix
+        # up and then bind any data set so far
+        self.project_map.on_set(self._event_set_project_map)
+        for x in self.project_map.copy():
+            self.project_map[x]=self.project_map[x]
+
+    def init_pmi(self, pmi):
+        ProjectManagerInterface._project_manager = self
+        self.smash.shell.user_ns['proj'] = pmi
+
+    def init_magics(self):
+        from smashlib.project_manager.magics import ProjectMagics
+        ProjectMagics.project_manager = self
+        self.smash.shell.register_magics(ProjectMagics)
 
     @property
     def _project_name(self):
@@ -62,16 +86,6 @@ class ProjectManager(Reporter):
             _help='this directory is a project.  to activate it, type {0}'
             _help = _help.format(green('proj.'+project_name))
             self.info(_help)
-
-    def init(self):
-        # at this point project_map has been created from
-        # configuration data, but it's callback mechanism
-        # which does validation has not be registered yet.
-        # bind it, then reinitialize project_map to fix
-        # up and then bind any data set so far
-        self.project_map.on_set(self._event_set_project_map)
-        for x in self.project_map.copy():
-            self.project_map[x]=self.project_map[x]
 
     def _event_set_project_map(self, key, val):
         """ final word in cleaning/verifying/binding
@@ -141,7 +155,7 @@ class ProjectManager(Reporter):
 
     def build_argparser(self):
         parser = super(ProjectManager, self).build_argparser()
-        parser.add_argument('--project', default='')
+        parser.add_argument('-p','--project', default='')
         return parser
 
     def parse_argv(self):
@@ -165,16 +179,22 @@ class ProjectManager(Reporter):
         return self._guess_operation_steps(
             name, dir, operation_dict,
             Activation, NullActivation)
+
     def _guess_check_steps(self, name, dir):
         operation_dict = CHECK
         return self._guess_operation_steps(
             name, dir, operation_dict,
             Check, NullCheck)
 
+    def _guess_test_steps(self, name, dir):
+        operation_dict = TEST
+        return self._guess_operation_steps(
+            name, dir, operation_dict,
+            Test, NullTest)
+
     def _guess_operation_steps(
         self, name, dir, operation_dict,
         step_kls, default_step):
-        from smashlib.project_manager.operation import OperationStep,NullOperationStep
         assert all([inspect.isclass(step_kls),
                     inspect.isclass(default_step),
                     issubclass(step_kls,OperationStep),
@@ -218,6 +238,9 @@ class ProjectManager(Reporter):
             self.jump_project(name)
     activate = activate_project
 
+    def test(self, name):
+        self.perform_operation(name, 'test')
+
     def guess_project_type(self, project_name):
         pdir = self.project_map[project_name]
         return guess_dir_type(pdir)
@@ -225,9 +248,6 @@ class ProjectManager(Reporter):
     def check(self, pname):
         return self.perform_operation(pname, 'check')
 
-    def init_pmi(self, pmi):
-        ProjectManagerInterface._project_manager = self
-        self.smash.shell.user_ns['proj'] = pmi
 
 class ProjectManagerInterface(object):
     """ This object should be a singleton and will be assigned to
@@ -244,8 +264,9 @@ class ProjectManagerInterface(object):
 
     @property
     def _venvs(self):
+        pname = self._project_manager._current_project
         return find_venvs(
-            self._project_managerproject_map[self._project_manager_current_project])
+            self._project_manager.project_map[pname])
 
     @property
     def _recent(self):
@@ -278,14 +299,17 @@ class ProjectManagerInterface(object):
 
     def _ack(self, pat):
         """ TODO: should really be some kind of magic """
+        from smashlib.util._fabric import require_bin
+        require_bin('ack-grep')
         venvs = self._venvs
-        cmd = 'ack "{0}" "{1"} {2}'
+        cmd = 'ack-grep "{0}" "{1}" {2}'
         pdir = self._project_manager.project_map[
             self._project_manager._current_project]
         ignores = ['--ignore-dir="{0}"'.format(venv) for venv in venvs]
         ignores = ' '.join(ignores)
-        cmd = cmd.format(pat, pdir,ignores)
-        self._project_managersmash.system(cmd)
+        cmd = cmd.format(pat, pdir, ignores)
+        results = self._project_manager.smash.system(cmd)
+        print results
 
     @property
     def _check(self):
