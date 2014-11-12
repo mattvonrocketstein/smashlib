@@ -5,6 +5,14 @@
 import os
 from setuptools import setup as _setup
 from setuptools.command.install import install
+try:
+    import goulash
+except ImportError:
+    err = ('Smash-shell installer requires goulash.  '
+           '"pip install goulash==0.2" and try again')
+    raise SystemExit(err)
+
+from goulash.venv import is_venv, to_vbin
 
 DOT_SMASH = os.path.abspath(os.path.expanduser('~/.smash'))
 IPY_VERSION = '3.0.0-dev'
@@ -16,7 +24,6 @@ SMASH_REQS = os.path.abspath(os.path.join(
     'requirements.txt'))
 
 class InstallCommand(install):
-
 
     def _fabric(self, sub=None):
         try:
@@ -42,7 +49,6 @@ class InstallCommand(install):
 
 
     def build_smash_venv(self):
-        from smashlib.util.venv import is_venv
         if is_venv(DOT_SMASH):
             self.report("{0} is already a venv.  leaving it alone".format(
                 DOT_SMASH))
@@ -165,7 +171,6 @@ class InstallCommand(install):
 
     @property
     def smash_vbin(self):
-        from smashlib.util.venv import to_vbin
         vbin = to_vbin(DOT_SMASH)
         return vbin
 
